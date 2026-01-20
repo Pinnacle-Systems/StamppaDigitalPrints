@@ -333,7 +333,7 @@ export default function Form() {
           <Modal
             isOpen={form}
             form={form}
-            widthClass={"w-[90%] h-[350px]"}
+            widthClass={"w-[90%] h-[500px]"}
             onClose={() => {
               setForm(false);
               // setErrors({});
@@ -426,7 +426,7 @@ export default function Form() {
                             readOnly={readOnly}
                           />
                         </fieldset>
-                        <fieldset className=" rounded-tr-lg rounded-bl-lg rounded-br-lg my-5 w-full flex h-[330px] overflow-auto border border-gray-200">
+                        <fieldset className=" rounded-tr-lg rounded-bl-lg rounded-br-lg my-5 w-full flex h-[300px] overflow-auto border border-gray-200">
                           <legend className="sub-heading">
                             Tax Template Details
                           </legend>

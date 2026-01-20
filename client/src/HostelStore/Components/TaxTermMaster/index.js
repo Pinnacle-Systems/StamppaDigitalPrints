@@ -189,7 +189,7 @@ export default function Form() {
     },
 
     {
-      header: "Tax Type",
+      header: "Tax Term",
       accessor: (item) => item?.name,
       //   cellClass: () => "font-medium  text-gray-900",
       className: "font-medium text-gray-900 text-center uppercase w-72",
@@ -275,7 +275,7 @@ export default function Form() {
     // </div>
     <div onKeyDown={handleKeyDown} className="p-1 h-[90%]">
       <div className="w-full flex bg-white p-1 justify-between  items-center">
-        <h5 className="text-2xl font-bold text-gray-800">Tax Type Master</h5>
+        <h5 className="text-2xl font-bold text-gray-800">Tax Term Master</h5>
         <div className="flex items-center">
           <button
             onClick={() => {
@@ -284,7 +284,7 @@ export default function Form() {
             }}
             className="bg-white border  border-indigo-600 text-indigo-600 hover:bg-indigo-700 hover:text-white text-sm px-4 py-1 rounded-md shadow transition-colors duration-200 flex items-center gap-2"
           >
-            + Add New Tax Type
+            + Add New Tax Term
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@ export default function Form() {
           <Modal
             isOpen={form}
             form={form}
-            widthClass={"w-[40%] h-[45%] h-[350px]"}
+            widthClass={"w-[600px] h-[350px]"}
             onClose={() => {
               setForm(false);
               // setErrors({});
@@ -317,9 +317,9 @@ export default function Form() {
                   <h2 className="text-lg px-2 py-0.5 font-semibold  text-gray-800">
                     {id
                       ? !readOnly
-                        ? "Edit Tax Type  Master"
-                        : "Tax Type  Master"
-                      : "Add New Tax Type  Master"}
+                        ? "Edit Tax Term  Master"
+                        : "Tax Term  Master"
+                      : "Add New Tax Term  Master"}
                   </h2>
                 </div>
                 <div className="flex gap-2">
@@ -380,7 +380,7 @@ export default function Form() {
                           <div className="grid grid-cols-2 my-2">
                             <div className="w-[50%">
                               <TextInputNew
-                                name="Tax Type"
+                                name="Tax Term"
                                 type="text"
                                 value={name}
                                 setValue={setName}

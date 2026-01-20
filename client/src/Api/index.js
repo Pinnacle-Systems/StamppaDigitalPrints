@@ -42,6 +42,7 @@ export const BRANCH_TYPE_MASTER = "branchType"
 
 
 export const OPENING_BALANCE = "openingBalance"
+export const PO_API = "po"
 
 
 

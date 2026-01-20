@@ -49,11 +49,8 @@ export const statusDropdown = [
 ]
 
 export const poTypes = [
-    { show: "Grey Yarn", value: "GreyYarn" },
-    { show: "Dyed Yarn", value: "DyedYarn" },
-    { show: "Grey Fabric", value: "GreyFabric" },
-    { show: "Dyed Fabric", value: "DyedFabric" },
-    { show: "Accessory", value: "Accessory" },
+    { show: "ORDER", value: "Order Purchase" },
+    { show: "GENERAL", value: "General Purchase" },
 ]
 
 export const paymentTypes = [

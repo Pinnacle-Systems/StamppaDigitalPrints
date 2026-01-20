@@ -1,17 +1,26 @@
-import validator from 'validator';
+import validator from "validator";
 import React, { forwardRef, useEffect, useRef, useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
-import Select from 'react-dropdown-select';
-import { findFromList } from '../Utils/helper';
-import { FaChevronLeft, FaChevronRight, FaEdit, FaInfoCircle, FaPlus, FaSearch, FaTrash } from 'react-icons/fa';
-import secureLocalStorage from 'react-secure-storage';
-import { useGetPartyNewQuery, useGetPartyQuery } from '../redux/services/PartyMasterService';
-import { useModal } from '../Basic/pages/home/context/ModalContext';
-import useOutsideClick from '../CustomHooks/handleOutsideClick';
-import Modal from '../UiComponents/Modal';
-import DynamicRenderer from '../HostelStore/Components/DeliveryChallan/DynamicComponent';
-
-
+import Select from "react-dropdown-select";
+import { findFromList } from "../Utils/helper";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaEdit,
+  FaInfoCircle,
+  FaPlus,
+  FaSearch,
+  FaTrash,
+} from "react-icons/fa";
+import secureLocalStorage from "react-secure-storage";
+import {
+  useGetPartyNewQuery,
+  useGetPartyQuery,
+} from "../redux/services/PartyMasterService";
+import { useModal } from "../Basic/pages/home/context/ModalContext";
+import useOutsideClick from "../CustomHooks/handleOutsideClick";
+import Modal from "../UiComponents/Modal";
+import DynamicRenderer from "../HostelStore/Components/DeliveryChallan/DynamicComponent";
 
 export const handleOnChange = (event, setValue) => {
   const inputValue = event.target.value;
@@ -23,253 +32,630 @@ export const handleOnChange = (event, setValue) => {
   const valueBeforeCursor = upperCaseValue.slice(0, inputSelectionStart);
   const valueAfterCursor = upperCaseValue.slice(inputSelectionEnd);
 
-  setValue(valueBeforeCursor + inputValue.slice(inputSelectionStart, inputSelectionEnd) + valueAfterCursor);
+  setValue(
+    valueBeforeCursor +
+      inputValue.slice(inputSelectionStart, inputSelectionEnd) +
+      valueAfterCursor,
+  );
 
   // Set the cursor position to the end of the input value
   setTimeout(() => {
-    event.target.setSelectionRange(valueBeforeCursor.length + inputValue.slice(inputSelectionStart, inputSelectionEnd).length, valueBeforeCursor.length + inputValue.slice(inputSelectionStart, inputSelectionEnd).length);
+    event.target.setSelectionRange(
+      valueBeforeCursor.length +
+        inputValue.slice(inputSelectionStart, inputSelectionEnd).length,
+      valueBeforeCursor.length +
+        inputValue.slice(inputSelectionStart, inputSelectionEnd).length,
+    );
   });
 };
 
-export const MultiSelectDropdown = ({ name, selected, labelName, setSelected, options, readOnly = false, tabIndex = null, className = "", inputClass }) => {
+export const MultiSelectDropdown = ({
+  name,
+  selected,
+  labelName,
+  setSelected,
+  options,
+  readOnly = false,
+  tabIndex = null,
+  className = "",
+  inputClass,
+}) => {
   return (
-    <div className={`m-1 grid grid-cols-1 md:grid-cols-3 items-center z-0 md:my-0.5 md:py-3 data ${className}`}>
-      <label className={`md:text-start flex ${labelName}`} >{name}</label>
+    <div
+      className={`m-1 grid grid-cols-1 md:grid-cols-3 items-center z-0 md:my-0.5 md:py-3 data ${className}`}
+    >
+      <label className={`md:text-start flex ${labelName}`}>{name}</label>
       <MultiSelect
         className={`focus:outline-none  border border-gray-500 rounded text-black  ${inputClass}`}
         options={options}
         value={selected}
-        onChange={readOnly ? () => { } : setSelected}
+        onChange={readOnly ? () => {} : setSelected}
         labelledBy="Select"
       />
     </div>
   );
 };
 
-export const TextInput = ({ name, type, value, setValue, readOnly, className, required = false, disabled = false, tabIndex = null, onBlur = null }) => {
-  return (
-    <div className='grid grid-cols-1 md:grid-cols-3 items-center md:my-0.5 md:px-1 data gap-1'>
-      <label className={`md:text-start flex ${className}`}>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <input onBlur={onBlur} tabIndex={tabIndex ? tabIndex : undefined} type={type} disabled={disabled} required={required} className='input-field focus:outline-none md:col-span-2 border-emerald-800 border-2 rounded' value={value} onChange={(e) => { type === "number" ? setValue(e.target.value) : handleOnChange(e, setValue) }} readOnly={readOnly} />
-    </div>
-  )
-}
+export const TextInput = forwardRef(
+  (
+    {
+      name,
+      label,
+      type = "text",
+      value,
+      setValue,
+      readOnly = false,
+      className = "",
+      required = false,
+      disabled = false,
+      tabIndex = null,
+      onBlur = null,
+      width = "full",
+      autoFocus,
+      onKeyDown,
+    },
+    ref,
+  ) => {
+    const handleBlur = (e) => {
+      if (type === "number") {
+        const val = Number(e.target.value);
 
-export const LongTextInput = ({ name, type, value, setValue, className, readOnly, required = false, disabled = false, tabIndex = null }) => {
-  return (
-    <div className='grid grid-cols-1 md:grid-cols-2 items-center md:my-0.5 md:px-1 data gap-1'>
-      <label className='md:text-start flex'>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <input tabIndex={tabIndex ? tabIndex : undefined} type={type} disabled={disabled} required={required} className={className} value={value} onChange={(e) => { type === "number" ? setValue(e.target.value) : handleOnChange(e, setValue) }} readOnly={readOnly} />
-    </div>
-  )
-}
+        if (!isNaN(val) && val < 0) {
+          alert(`${name} cannot be negative`);
+          setValue(""); // or "" if you prefer
+          return;
+        }
+      }
 
-export const DisabledInput = ({ name, type, value, className = "", textClassName = "", tabIndex = null }) => {
+      // Call parent onBlur if provided
+      if (onBlur) onBlur(e);
+    };
+    return (
+      <div className={`mb-2 ${width}`}>
+        {name && (
+          <label className="block text-xs font-bold text-slate-700 mb-1">
+            {required ? <RequiredLabel name={label ? label : name} /> : name}
+          </label>
+        )}
+        <input
+          ref={ref}
+          type={type}
+          value={value}
+          onChange={(e) =>
+            type === "number"
+              ? setValue(e.target.value)
+              : handleOnChange(e, setValue, type)
+          }
+          onBlur={handleBlur}
+          placeholder={name}
+          readOnly={readOnly}
+          disabled={disabled}
+          tabIndex={tabIndex ?? undefined}
+          className={`w-full px-3 py-1 text-xs border border-gray-300 rounded-lg
+          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+          transition-all duration-150 shadow-sm
+          ${
+            readOnly || disabled
+              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+              : "bg-white hover:border-gray-400"
+          }
+          ${className}`}
+          autoFocus={autoFocus}
+          onKeyDown={onKeyDown}
+        />
+      </div>
+    );
+  },
+);
+
+export const LongTextInput = ({
+  name,
+  type,
+  value,
+  setValue,
+  className,
+  readOnly,
+  required = false,
+  disabled = false,
+  tabIndex = null,
+}) => {
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-3 items-center md:my-0.5 md:px-1 data  ${className}`}>
+    <div className="grid grid-cols-1 md:grid-cols-2 items-center md:my-0.5 md:px-1 data gap-1">
+      <label className="md:text-start flex">
+        {required ? <RequiredLabel name={name} /> : `${name}`}
+      </label>
+      <input
+        tabIndex={tabIndex ? tabIndex : undefined}
+        type={type}
+        disabled={disabled}
+        required={required}
+        className={className}
+        value={value}
+        onChange={(e) => {
+          type === "number"
+            ? setValue(e.target.value)
+            : handleOnChange(e, setValue);
+        }}
+        readOnly={readOnly}
+      />
+    </div>
+  );
+};
+
+export const DisabledInput = ({
+  name,
+  type,
+  value,
+  className = "",
+  textClassName = "",
+  tabIndex = null,
+}) => {
+  return (
+    <div
+      className={`grid grid-cols-1 md:grid-cols-3 items-center md:my-0.5 md:px-1 data  ${className}`}
+    >
       <label className={`md:text-start flex ${className} `}>{name}</label>
-      <input tabIndex={tabIndex ? tabIndex : undefined} type={type} className={`input-field ${textClassName} focus:outline-none md:col-span-2 border-2 border-emerald-800 p-1 rounded`} value={value} disabled />
+      <input
+        tabIndex={tabIndex ? tabIndex : undefined}
+        type={type}
+        className={`input-field ${textClassName} focus:outline-none md:col-span-2 border-2 border-emerald-800 p-1 rounded`}
+        value={value}
+        disabled
+      />
     </div>
-  )
-}
+  );
+};
 
-export const LongDisabledInput = ({ name, type, value, className, tabIndex = null }) => {
+export const LongDisabledInput = ({
+  name,
+  type,
+  value,
+  className,
+  tabIndex = null,
+}) => {
   return (
-    <div className={`grid grid-flow-col  items-center md:my-0.5 md:px-1 data ${className}`}>
+    <div
+      className={`grid grid-flow-col  items-center md:my-0.5 md:px-1 data ${className}`}
+    >
       <label className={`md:text-start flex ${className} `}>{name}</label>
-      <input type={type} className={`h-6 border border-gray-500 rounded`} value={value} disabled />
+      <input
+        type={type}
+        className={`h-6 border border-gray-500 rounded`}
+        value={value}
+        disabled
+      />
     </div>
-  )
-}
+  );
+};
 
-export const TextArea = ({ name, value, setValue, readOnly, required = false, disabled = false, rows = 2, cols = 30, tabIndex = null }) => {
+export const TextArea = ({
+  name,
+  value,
+  setValue,
+  readOnly,
+  required = false,
+  disabled = false,
+  rows = 2,
+  cols = 30,
+  tabIndex = null,
+}) => {
   return (
-    <div className='grid grid-cols-1 md:grid-cols-3 md:my-1 md:px-1 data'>
-      <label className='md:text-start flex'>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <textarea tabIndex={tabIndex ? tabIndex : undefined} name={name} disabled={disabled} required={required} className='focus:outline-none md:col-span-2 border border-gray-500 rounded' cols={cols} rows={rows} value={value} onChange={(e) => { handleOnChange(e, setValue); }} readOnly={readOnly}></textarea>
+    <div className="grid grid-cols-1 md:grid-cols-3 md:my-1 md:px-1 data">
+      <label className="md:text-start flex">
+        {required ? <RequiredLabel name={name} /> : `${name}`}
+      </label>
+      <textarea
+        tabIndex={tabIndex ? tabIndex : undefined}
+        name={name}
+        disabled={disabled}
+        required={required}
+        className="focus:outline-none md:col-span-2 border border-gray-500 rounded"
+        cols={cols}
+        rows={rows}
+        value={value}
+        onChange={(e) => {
+          handleOnChange(e, setValue);
+        }}
+        readOnly={readOnly}
+      ></textarea>
     </div>
-  )
-}
+  );
+};
 
-export const DropdownInput = ({ name, beforeChange = () => { }, onBlur = null, options, value, setValue, defaultValue, className, readOnly, required = false, disabled = false, clear = false, tabIndex = null, autoFocus = false }) => {
+export const DropdownInput = forwardRef(
+  (
+    {
+      name,
+      beforeChange = () => {},
+      onBlur = null,
+      options,
+      value,
+      setValue,
+      defaultValue,
+      className = "",
+      readOnly = false,
+      required = false,
+      disabled = false,
+      clear = false,
+      tabIndex = null,
+      autoFocus = false,
+      width = "full",
+      country,
+      openOnFocus = false, // new prop
+    },
+    ref,
+  ) => {
+    const handleOnChange = (e) => {
+      setValue(e.target.value);
+    };
+
+    const isDisabled = readOnly || disabled;
+
+    useEffect(() => {
+      if (ref?.current && openOnFocus) {
+        ref.current.focus();
+      }
+    }, [openOnFocus]);
+
+    return (
+      <div className={`mb-2 ${width}`}>
+        {name && (
+          <label className="block text-xs font-bold text-slate-700 mb-1">
+            {required ? <RequiredLabel name={name} /> : name}
+          </label>
+        )}
+        <select
+          ref={ref}
+          onBlur={onBlur}
+          autoFocus={autoFocus}
+          tabIndex={tabIndex ?? undefined}
+          defaultValue={defaultValue}
+          required={required}
+          className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
+          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
+          transition-all duration-150 shadow-sm
+          ${className}`}
+          value={value}
+          onChange={(e) => {
+            beforeChange();
+            handleOnChange(e);
+          }}
+          onFocus={(e) => {
+            if (openOnFocus) {
+              e.target.click();
+            }
+          }}
+          disabled={isDisabled}
+        >
+          <option value="" hidden={!clear} className="text-gray-800">
+            Select
+          </option>
+          {options?.map((option, index) => (
+            <option
+              key={index}
+              value={option.value}
+              className="text-xs py-1 text-gray-800"
+            >
+              {option.show}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  },
+);
+
+export const LongDropdownInput = ({
+  name,
+  options,
+  value,
+  setValue,
+  defaultValue,
+  className,
+  readOnly,
+  required = false,
+  disabled = false,
+  clear = false,
+  tabIndex = null,
+}) => {
   const handleOnChange = (e) => {
     setValue(e.target.value);
-  }
+  };
   return (
-    <div className={`grid grid-cols-3 items-center md:my-1 md:px-1 data ${className}`} >
-      <label className={`md:text-start flex ${className}`}>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
+    <div className="grid grid-cols-12 items-center md:my-1 md:px-1 data">
+      <label className={`text-start text-sm col-span-2 `}>
+        {required ? <RequiredLabel name={name} /> : `${name}`}
+      </label>
       <select
-        onBlur={onBlur}
-        autoFocus={autoFocus} tabIndex={tabIndex ? tabIndex : undefined} defaultValue={defaultValue} id='dd'
-        required={required} name="name" className='input-field border-2 border-emerald-800 md:col-span-2 col-span-1 rounded'
-        value={value} onChange={(e) => { beforeChange(); handleOnChange(e); }} disabled={readOnly}>
-        <option value="" hidden={!clear}>Select</option>
-        {options.map((option, index) => <option key={index} value={option.value} >
-          {option.show}
-        </option>)}
-      </select>
-    </div>
-  )
-}
-
-export const LongDropdownInput = ({ name, options, value, setValue, defaultValue, className, readOnly, required = false,
-  disabled = false, clear = false, tabIndex = null }) => {
-  const handleOnChange = (e) => {
-    setValue(e.target.value);
-  }
-  return (
-    <div className='grid grid-cols-12 items-center md:my-1 md:px-1 data'>
-      <label className={`text-start text-sm col-span-2 `}>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <select tabIndex={tabIndex ? tabIndex : undefined} defaultValue={defaultValue} id='dd' required={required} name="name"
-        className={`border-2 border-emerald-800 h-6 rounded ${className} col-span-10`} value={value} onChange={(e) => { handleOnChange(e); }} disabled={readOnly}>
+        tabIndex={tabIndex ? tabIndex : undefined}
+        defaultValue={defaultValue}
+        id="dd"
+        required={required}
+        name="name"
+        className={`border-2 border-emerald-800 h-6 rounded ${className} col-span-10`}
+        value={value}
+        onChange={(e) => {
+          handleOnChange(e);
+        }}
+        disabled={readOnly}
+      >
         <option value="">Select</option>
-        {options.map((option, index) => <option key={index} value={option.value} >
-          {option.show}
-        </option>)}
+        {options.map((option, index) => (
+          <option key={index} value={option.value}>
+            {option.show}
+          </option>
+        ))}
       </select>
     </div>
-  )
-}
+  );
+};
 
-export const RadioButton = ({ label, value, onChange, readOnly, className, tabIndex = null }) => {
+export const RadioButton = ({
+  label,
+  value,
+  onChange,
+  readOnly,
+  className,
+  tabIndex = null,
+}) => {
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      <input type="radio" tabIndex={tabIndex ? tabIndex : undefined} checked={value} onChange={onChange} />
-      <label>
-        {label}
+      <input
+        type="radio"
+        tabIndex={tabIndex ? tabIndex : undefined}
+        checked={value}
+        onChange={onChange}
+      />
+      <label>{label}</label>
+    </div>
+  );
+};
+
+export const DropdownInputWithoutLabel = ({
+  options,
+  value,
+  setValue,
+  readOnly,
+  required = false,
+  disabled = false,
+  tabIndex = null,
+}) => {
+  const handleOnChange = (e) => {
+    setValue(e.target.value);
+  };
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 items-center md:my-1 md:px-1 data">
+      <select
+        tabIndex={tabIndex ? tabIndex : undefined}
+        required={required}
+        name="name"
+        className="input-field md:col-span-2 border col-span-1 rounded"
+        value={value}
+        onChange={(e) => {
+          handleOnChange(e);
+        }}
+        disabled={readOnly}
+      >
+        <option value="" hidden>
+          Select
+        </option>
+        {options.map((option, index) => (
+          <option key={index} value={option.value}>
+            {option.show}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+export const CurrencyInput = ({
+  name,
+  value,
+  setValue,
+  readOnly,
+  required = false,
+  disabled = false,
+  tabIndex = null,
+}) => {
+  const handleOnChange = (e) => {
+    setValue(e.target.value);
+  };
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 items-center md:my-1 md:px-1 data">
+      <label htmlFor="id" className="md:text-start flex">
+        {required ? <RequiredLabel name={name} /> : `${name}`}
+      </label>
+      <input
+        tabIndex={tabIndex ? tabIndex : undefined}
+        type="number"
+        disabled={disabled}
+        required={required}
+        className="input-field focus:outline-none md:col-span-2 border rounded"
+        min="1"
+        step="any"
+        id="id"
+        value={value}
+        onChange={(e) => {
+          handleOnChange(e);
+        }}
+        readOnly={readOnly}
+      />
+    </div>
+  );
+};
+
+const RequiredLabel = ({ name }) => (
+  <p>
+    {`${name}`}
+    <span className="text-red-500">*</span>{" "}
+  </p>
+);
+
+export const DateInput = ({
+  name,
+  value,
+  setValue,
+  readOnly,
+  required = false,
+  type = "date",
+  disabled = false,
+  tabIndex = null,
+  inputClass,
+  inputHead,
+}) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 items-center md:my-1 md:px-1 data w-full">
+      <label htmlFor="id" className={`md:text-start flex ${inputHead}`}>
+        {required ? <RequiredLabel name={name} /> : `${name}`}
+      </label>
+      <input
+        tabIndex={tabIndex ? tabIndex : undefined}
+        type={type}
+        disabled={disabled}
+        required={required}
+        className={`input-field focus:outline-none md:col-span-2 border border-gray-500 rounded w-full ${inputClass}`}
+        id="id"
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        readOnly={readOnly}
+      />
+    </div>
+  );
+};
+
+export const LongDateInput = ({
+  name,
+  value,
+  setValue,
+  readOnly,
+  className,
+  required = false,
+  type = "date",
+  disabled = false,
+  tabIndex = null,
+}) => {
+  return (
+    <div className="grid grid-flow-col item-center justify-center gap-12 w-56 items-center md:px-1 data">
+      <label htmlFor="id" className="md:text-start flex">
+        {required ? <RequiredLabel name={name} /> : `${name}`}
+      </label>
+      <input
+        tabIndex={tabIndex ? tabIndex : undefined}
+        type={type}
+        disabled={disabled}
+        required={required}
+        className={`${className} focus:outline-none border border-gray-500 form-border-color rounded h-6`}
+        id="id"
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        readOnly={readOnly}
+      />
+    </div>
+  );
+};
+
+export const CheckBox = ({
+  name,
+  value,
+  setValue,
+  readOnly = false,
+  className,
+  required = false,
+  disabled = false,
+  tabIndex = null,
+}) => {
+  const handleOnChange = (e) => {
+    setValue(!value);
+  };
+  return (
+    <div className="items-center md:my-1 md:px-1 data">
+      <label htmlFor="id" className={`md:text-start items-center ${className}`}>
+        <input
+          tabIndex={tabIndex ? tabIndex : undefined}
+          type="checkbox"
+          required={required}
+          className="mx-2 py-2"
+          checked={value}
+          onChange={(e) => {
+            handleOnChange(e);
+          }}
+          disabled={readOnly}
+        />
+        {name}
       </label>
     </div>
   );
 };
 
-
-export const DropdownInputWithoutLabel = ({ options, value, setValue, readOnly, required = false, disabled = false, tabIndex = null }) => {
-  const handleOnChange = (e) => {
-    setValue(e.target.value);
-  }
-  return (
-    <div className='grid grid-cols-1 md:grid-cols-3 items-center md:my-1 md:px-1 data'>
-      <select tabIndex={tabIndex ? tabIndex : undefined} required={required} name="name" className='input-field md:col-span-2 border col-span-1 rounded' value={value} onChange={(e) => { handleOnChange(e); }} disabled={readOnly}>
-        <option value="" hidden>Select</option>
-        {options.map((option, index) => <option key={index} value={option.value} >{option.show}</option>)}
-      </select>
-    </div>
-  )
-}
-
-
-export const CurrencyInput = ({ name, value, setValue, readOnly, required = false, disabled = false, tabIndex = null }) => {
-  const handleOnChange = (e) => {
-    setValue(e.target.value);
-  }
-  return (
-    <div className='grid grid-cols-1 md:grid-cols-3 items-center md:my-1 md:px-1 data'>
-      <label htmlFor="id" className='md:text-start flex'>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <input tabIndex={tabIndex ? tabIndex : undefined} type="number" disabled={disabled} required={required} className='input-field focus:outline-none md:col-span-2 border rounded' min="1" step="any" id='id' value={value} onChange={(e) => { handleOnChange(e); }} readOnly={readOnly} />
-    </div>
-  )
-}
-
-const RequiredLabel = ({ name }) => <p>{`${name}`}<span className="text-red-500">*</span> </p>
-
-
-
-export const DateInput = ({ name, value, setValue, readOnly, required = false, type = "date", disabled = false, tabIndex = null, inputClass, inputHead }) => {
-  return (
-    <div className='grid grid-cols-1 md:grid-cols-3 items-center md:my-1 md:px-1 data w-full'>
-      <label htmlFor="id" className={`md:text-start flex ${inputHead}`}>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <input tabIndex={tabIndex ? tabIndex : undefined} type={type} disabled={disabled} required={required}
-        className={`input-field focus:outline-none md:col-span-2 border border-gray-500 rounded w-full ${inputClass}`} id='id' value={value} onChange={(e) => { setValue(e.target.value); }} readOnly={readOnly} />
-    </div>
-  )
-}
-
-export const LongDateInput = ({ name, value, setValue, readOnly, className, required = false, type = "date", disabled = false, tabIndex = null }) => {
-
-  return (
-    <div className='grid grid-flow-col item-center justify-center gap-12 w-56 items-center md:px-1 data'>
-      <label htmlFor="id" className='md:text-start flex'>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-      <input tabIndex={tabIndex ? tabIndex : undefined} type={type} disabled={disabled} required={required} className={`${className} focus:outline-none border border-gray-500 form-border-color rounded h-6`} id='id' value={value} onChange={(e) => { setValue(e.target.value); }} readOnly={readOnly} />
-    </div>
-  )
-}
-
-export const CheckBox = ({ name, value, setValue, readOnly = false, className, required = false, disabled = false, tabIndex = null }) => {
-  const handleOnChange = (e) => {
-    setValue(!value);
-  }
-  return (
-    <div className='items-center md:my-1 md:px-1 data'>
-      <label htmlFor="id" className={`md:text-start items-center ${className}`}>
-        <input tabIndex={tabIndex ? tabIndex : undefined} type="checkbox" required={required} className='mx-2 py-2' checked={value} onChange={(e) => { handleOnChange(e); }} disabled={readOnly} />
-        {name}
-      </label>
-    </div>
-  )
-}
-
-
-
 export const validateEmail = (data) => {
   return validator.isEmail(data);
-}
+};
 
 export const validateMobile = (data) => {
   let regMobile = /^[6-9]\d{9}$/;
   return regMobile.test(data);
-}
+};
 
 export const validatePan = (data) => {
   let regpan = /^([a-zA-Z]){5}([0-9]){4}([a-zA-Z]){1}?$/;
   return regpan.test(data);
-}
+};
 
 export const validatePincode = (data) => {
   return data.toString().length === 6;
-}
+};
 
-export const DropdownWithSearch = ({ options, value, setValue, readOnly, required }) => {
+export const DropdownWithSearch = ({
+  options,
+  value,
+  setValue,
+  readOnly,
+  required,
+}) => {
   const [currentIndex, setCurrentIndex] = useState("");
-  useEffect(() => setCurrentIndex(new Date()), [])
+  useEffect(() => setCurrentIndex(new Date()), []);
   useEffect(() => {
     const dropDownElement = document.getElementById(`dropdown${currentIndex}`);
-    dropDownElement.addEventListener('keydown', function (ev) {
+    dropDownElement.addEventListener("keydown", function (ev) {
       var focusableElementsString = '[tabindex="0"]';
       let ol = dropDownElement.querySelectorAll(focusableElementsString);
       if (ev.key === "ArrowDown") {
         for (let i = 0; i < ol.length; i++) {
           if (ol[i] === ev.target) {
             let o = i < ol.length - 1 ? ol[i + 1] : ol[0];
-            o.focus(); break;
+            o.focus();
+            break;
           }
         }
-        ev.preventDefault()
+        ev.preventDefault();
       } else if (ev.key === "ArrowUp") {
         for (let i = 0; i < ol.length; i++) {
           if (ol[i] === ev.target) {
             let o = ol[i - 1];
-            o.focus(); break;
+            o.focus();
+            break;
           }
         }
-        ev.preventDefault()
+        ev.preventDefault();
       }
     });
 
     return () => {
-      dropDownElement.removeEventListener('keydown', () => { });
+      dropDownElement.removeEventListener("keydown", () => {});
     };
   }, [currentIndex]);
 
-  // const ItemRenderer = ({ item, itemIndex, props, state, methods }) =>
-  //     <div onClick={() => methods.addItem(item)} tabIndex={0} className='hover:bg-blue-500'>{item.name}</div>
-
-  // const ContentRenderer = ({ state }) =>
-  //     <div tabIndex={0} className='hover:bg-blue-500'>{`${state?.values[0]}1`}</div>
-
-
   return (
     <div id={`dropdown${currentIndex}`}>
-      <Select className='' searchBy='name' options={options || []}
+      <Select
+        className=""
+        searchBy="name"
+        options={options || []}
         key={value}
         // ContentRenderer={ContentRenderer}
         // itemRenderer={ItemRenderer}
@@ -277,50 +663,81 @@ export const DropdownWithSearch = ({ options, value, setValue, readOnly, require
         labelField="name"
         valueField="id"
         multi={false}
-        values={value ? [{
-          id: value, name:
-            findFromList(value, options || [], "name")
-        }] : []}
+        values={
+          value
+            ? [
+                {
+                  id: value,
+                  name: findFromList(value, options || [], "name"),
+                },
+              ]
+            : []
+        }
         onChange={(value) => {
-          setValue(value[0] ? value[0]?.id : "")
-        }} />
+          setValue(value[0] ? value[0]?.id : "");
+        }}
+      />
     </div>
-  )
-}
+  );
+};
 
-
-export function ReusableInput(
-  { setValue, label, type, value, className = "", placeholder, readOnly, disabled }
-) {
+export function ReusableInput({
+  setValue,
+  label,
+  type,
+  value,
+  className = "",
+  placeholder,
+  readOnly,
+  disabled,
+  autoFocus,
+  onKeyDown,
+  required,
+}) {
   return (
     <div className="mb-2">
-      {label && (
-        <label htmlFor="id" className="text-xs ">
+      {required ? (
+        <span className="text-xs text-slate-700 font-bold mb-1   block">
+          {label} <span className="text-red-500">*</span>
+        </span>
+      ) : (
+        <span className="text-xs text-slate-700 font-bold mb-1   block">
           {label}
-        </label>
+        </span>
       )}
       <input
         type={type}
         value={value}
         onChange={(e) =>
-          type === "number" ? setValue(e.target.value) : handleOnChange(e, setValue)
+          type === "number"
+            ? setValue(e.target.value)
+            : handleOnChange(e, setValue)
         }
         placeholder={placeholder}
         readOnly={readOnly}
+        onKeyDown={onKeyDown}
         disabled={disabled}
-        className={`ml-4 border-emerald-800 border-2 rounded py-1 text-xs  
+        className={`w-full px-2 py-1 text-xs border border-slate-300 rounded-md 
           focus:border-indigo-300 focus:outline-none transition-all duration-200
-          hover:border-slate-400 ${readOnly || disabled ? "bg-slate-100" : ""
+          hover:border-slate-400 ${
+            readOnly || disabled ? "bg-slate-100" : ""
           } ${className}`}
+        autoFocus={autoFocus}
       />
     </div>
   );
 }
 
-
-export function ReusableInputNew(
-  { setValue, label, type, value, className = "", placeholder, readOnly, disabled }
-) {
+export function ReusableInputNew({
+  setValue,
+  label,
+  type,
+  value,
+  className = "",
+  placeholder,
+  readOnly,
+  disabled,
+}) {
   return (
     <div className="mb-2">
       {label && (
@@ -332,14 +749,17 @@ export function ReusableInputNew(
         type={type}
         value={value}
         onChange={(e) =>
-          type === "number" ? setValue(e.target.value) : handleOnChange(e, setValue)
+          type === "number"
+            ? setValue(e.target.value)
+            : handleOnChange(e, setValue)
         }
         placeholder={placeholder}
         readOnly={readOnly}
         disabled={disabled}
         className={`w-full px-2 py-1 text-xs border border-slate-300 rounded-md 
           focus:border-indigo-300 focus:outline-none transition-all duration-200
-          hover:border-slate-400 ${readOnly || disabled ? "bg-slate-100" : ""
+          hover:border-slate-400 ${
+            readOnly || disabled ? "bg-slate-100" : ""
           } ${className}`}
       />
     </div>
@@ -361,19 +781,18 @@ export const ReusableSearchableInput = forwardRef(
       required,
       show,
       name,
-      disabled
+      disabled,
     },
-    ref
+    ref,
   ) => {
-
     // console.log(optionList?.filter(item  => item[show]), "optionList")
 
     const companyId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId"
+      sessionStorage.getItem("sessionId") + "userCompanyId",
     );
 
     const userId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userId"
+      sessionStorage.getItem("sessionId") + "userId",
     );
 
     const {
@@ -400,12 +819,16 @@ export const ReusableSearchableInput = forwardRef(
     // close dropdown if click outside
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (containerRef.current && !containerRef.current.contains(event.target)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
           setIsDropdownOpen(false);
         }
       };
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     const handleEdit = (id, e) => {
@@ -426,10 +849,8 @@ export const ReusableSearchableInput = forwardRef(
       }
       setFilteredPages(
         partyList?.data?.filter((page) => {
-          return (
-            page?.name?.toLowerCase().includes(search.toLowerCase())
-          );
-        })
+          return page?.name?.toLowerCase().includes(search.toLowerCase());
+        }),
       );
     }, [search, partyList, isPartyFetching, isPartyLoading]);
 
@@ -466,16 +887,14 @@ export const ReusableSearchableInput = forwardRef(
       };
     }, [isDropdownOpen]);
 
-
-    console.log(filteredPages, "filteredPages")
-
+    console.log(filteredPages, "filteredPages");
 
     return (
       <>
         <Modal
           isOpen={openModel}
           onClose={() => setOpenModel(false)}
-          widthClass={"w-[10%] h-[10%]"}
+          widthClass={"w-[90%] h-[98%]"}
         >
           <DynamicRenderer
             componentName={component}
@@ -484,7 +903,11 @@ export const ReusableSearchableInput = forwardRef(
           />
         </Modal>
 
-        <div className="relative text-sm w-full" id="pageSearch" ref={containerRef}>
+        <div
+          className="relative text-sm w-full"
+          id="pageSearch"
+          ref={containerRef}
+        >
           {/* <label className="block text-xs font-bold text-slate-700 mb-1">
             {label}
           </label> */}
@@ -506,7 +929,7 @@ export const ReusableSearchableInput = forwardRef(
                   value={search}
                   onChange={(e) => {
                     setIsDropdownOpen(true);
-                    setSearchTerm(e.target.value)
+                    setSearchTerm(e.target.value);
                   }}
                   onFocus={(e) => {
                     // setSearchTerm(e.target.value)
@@ -598,7 +1021,6 @@ export const ReusableSearchableInput = forwardRef(
                           e.preventDefault();
                           nextRef?.current?.focus();
                         }
-
                       }
                     }}
                   >
@@ -632,158 +1054,161 @@ export const ReusableSearchableInput = forwardRef(
                     setIsDropdownOpen(false);
                     openAddModal();
                   }}
-                >
-                </button>
+                ></button>
               )}
             </div>
           )}
         </div>
       </>
     );
-  }
+  },
 );
 
-export const TextInputNew = forwardRef(({
-  name,
-  label,
-  type = "text",
-  value,
-  setValue,
-  readOnly = false,
-  className = "",
-  required = false,
-  disabled = false,
-  tabIndex = null,
-  onBlur = null,
-  width = "full",
-  max,
-  nextRef
-}, ref) => {
+export const TextInputNew = forwardRef(
+  (
+    {
+      name,
+      label,
+      type = "text",
+      value,
+      setValue,
+      readOnly = false,
+      className = "",
+      required = false,
+      disabled = false,
+      tabIndex = null,
+      onBlur = null,
+      width = "full",
+      max,
+      nextRef,
+    },
+    ref,
+  ) => {
+    console.log(ref, "countryNameRef");
+    return (
+      <div className={`mb-2 ${width}`}>
+        {name && (
+          <label className="block text-xs font-bold text-gray-600 mb-1">
+            {required ? <RequiredLabel name={label ? label : name} /> : name}
+          </label>
+        )}
 
-  console.log(ref, "countryNameRef")
-  return (
-    <div className={`mb-2 ${width}`}>
-      {name && (
-        <label className="block text-xs font-bold text-gray-600 mb-1">
-          {required ? <RequiredLabel name={label ? label : name} /> : name}
-        </label>
-      )}
-
-      <input
-        ref={ref}
-        type={type}
-        value={value}
-        onChange={(e) =>
-          type === "number"
-            ? setValue(e.target.value)
-            : handleOnChange(e, setValue)
-        }
-        onKeyDown={(e) => {
-          if (e.key === " ") {
-            e.preventDefault();
+        <input
+          ref={ref}
+          type={type}
+          value={value}
+          onChange={(e) =>
+            type === "number"
+              ? setValue(e.target.value)
+              : handleOnChange(e, setValue)
           }
-          if (e.key === "Enter" && nextRef?.current) {
-            nextRef.current?.showPicker()
-          }
-        }}
-        onBlur={onBlur}
-        placeholder={name}
-        readOnly={readOnly}
-        disabled={disabled}
-        tabIndex={tabIndex ?? undefined}
-        max={max ? String(max) : undefined}
-        className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
+          onKeyDown={(e) => {
+            if (e.key === " ") {
+              e.preventDefault();
+            }
+            if (e.key === "Enter" && nextRef?.current) {
+              nextRef.current?.showPicker();
+            }
+          }}
+          onBlur={onBlur}
+          placeholder={name}
+          readOnly={readOnly}
+          disabled={disabled}
+          tabIndex={tabIndex ?? undefined}
+          max={max ? String(max) : undefined}
+          className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
           transition-all duration-150 shadow-sm ${readOnly || disabled ? "bg-slate-100" : ""}
           ${className}`}
-      />
-    </div>
-  );
-});
+        />
+      </div>
+    );
+  },
+);
 
-export const DropdownInputNew = forwardRef(({
-  name,
-  beforeChange = () => { },
-  onBlur = null,
-  options,
-  value,
-  setValue,
-  defaultValue,
-  className = "",
-  readOnly = false,
-  required = false,
-  disabled = false,
-  clear = false,
-  tabIndex = null,
-  autoFocus = false,
-  width = "full",
-  country,
-  openOnFocus = false,
-  show   // new prop
-}, ref) => {
+export const DropdownInputNew = forwardRef(
+  (
+    {
+      name,
+      beforeChange = () => {},
+      onBlur = null,
+      options,
+      value,
+      setValue,
+      defaultValue,
+      className = "",
+      readOnly = false,
+      required = false,
+      disabled = false,
+      clear = false,
+      tabIndex = null,
+      autoFocus = false,
+      width = "full",
+      country,
+      openOnFocus = false,
+      show, // new prop
+    },
+    ref,
+  ) => {
+    const handleOnChange = (e) => {
+      setValue(e.target.value);
+    };
 
+    const isDisabled = readOnly || disabled;
 
-  const handleOnChange = (e) => {
-    setValue(e.target.value);
-  };
+    useEffect(() => {
+      if (ref?.current && openOnFocus) {
+        ref.current.focus();
+      }
+    }, [openOnFocus]);
 
-  const isDisabled = readOnly || disabled;
-
-  useEffect(() => {
-    if (ref?.current && openOnFocus) {
-      ref.current.focus();
-
-    }
-  }, [openOnFocus]);
-
-
-  return (
-    <div className={`mb-1 ${width}`}>
-      {name && (
-        <label className="block text-xs font-bold text-slate-700 mb-1">
-          {required ? <RequiredLabel name={name} /> : name}
-        </label>
-      )}
-      <select
-        ref={ref}
-        onBlur={onBlur}
-        autoFocus={autoFocus}
-        tabIndex={tabIndex ?? undefined}
-        defaultValue={defaultValue}
-        required={required}
-        className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
+    return (
+      <div className={`mb-1 ${width}`}>
+        {name && (
+          <label className="block text-xs font-bold text-slate-700 mb-1">
+            {required ? <RequiredLabel name={name} /> : name}
+          </label>
+        )}
+        <select
+          ref={ref}
+          onBlur={onBlur}
+          autoFocus={autoFocus}
+          tabIndex={tabIndex ?? undefined}
+          defaultValue={defaultValue}
+          required={required}
+          className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
           transition-all duration-150 shadow-sm ${readOnly || disabled ? "bg-slate-100" : ""}
           ${className}`}
-        value={value}
-        onChange={(e) => {
-          beforeChange();
-          handleOnChange(e);
-        }}
-        onFocus={(e) => {
-          if (openOnFocus) {
-            e.target.click();
-          }
-        }}
-        disabled={isDisabled}
-      >
-        <option value="" hidden={!clear} className="text-gray-800">
-          Select
-        </option>
-        {options?.map((option, index) => (
-          <option
-            key={index}
-            value={option.value}
-            className="text-xs py-1 text-gray-800"
-          >
-            {option.show}
+          value={value}
+          onChange={(e) => {
+            beforeChange();
+            handleOnChange(e);
+          }}
+          onFocus={(e) => {
+            if (openOnFocus) {
+              e.target.click();
+            }
+          }}
+          disabled={isDisabled}
+        >
+          <option value="" hidden={!clear} className="text-gray-800">
+            Select
           </option>
-        ))}
-      </select>
-    </div>
-  );
-});
-
+          {options?.map((option, index) => (
+            <option
+              key={index}
+              value={option.value}
+              className="text-xs py-1 text-gray-800"
+            >
+              {option.show}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  },
+);
 
 export const ReusableTable = ({
   columns,
@@ -792,9 +1217,9 @@ export const ReusableTable = ({
   onView,
   onEdit,
   onDelete,
-  emptyStateMessage = 'No data available',
+  emptyStateMessage = "No data available",
   rowActions = true,
-  width
+  width,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math?.ceil(data?.length / itemsPerPage);
@@ -802,7 +1227,7 @@ export const ReusableTable = ({
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = data?.slice(indexOfFirstItem, indexOfLastItem);
 
-  console.log(data, "commonTable")
+  console.log(data, "commonTable");
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -816,16 +1241,18 @@ export const ReusableTable = ({
     return (
       <div className=" w-full flex flex-col sm:flex-row justify-between items-center p-2 bg-white border-t border-gray-200">
         <div className="text-sm text-gray-600 mb-2 sm:mb-0">
-          Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, data?.length)} of {data?.length} entries
+          Showing {indexOfFirstItem + 1} to{" "}
+          {Math.min(indexOfLastItem, data?.length)} of {data?.length} entries
         </div>
         <div className="flex gap-1">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded-md ${currentPage === 1
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
+            className={`px-3 py-1 rounded-md ${
+              currentPage === 1
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
           >
             <FaChevronLeft className="inline" />
           </button>
@@ -846,10 +1273,11 @@ export const ReusableTable = ({
               <button
                 key={pageNum}
                 onClick={() => handlePageChange(pageNum)}
-                className={`px-3 py-1 rounded-md ${currentPage === pageNum
-                  ? 'bg-indigo-800 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-indigo-800 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
               >
                 {pageNum}
               </button>
@@ -863,10 +1291,11 @@ export const ReusableTable = ({
           {totalPages > 5 && currentPage < totalPages - 2 && (
             <button
               onClick={() => handlePageChange(totalPages)}
-              className={`px-3 py-1 rounded-md ${currentPage === totalPages
-                ? 'bg-indigo-800 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === totalPages
+                  ? "bg-indigo-800 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
             >
               {totalPages}
             </button>
@@ -875,10 +1304,11 @@ export const ReusableTable = ({
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded-md ${currentPage === totalPages
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
+            className={`px-3 py-1 rounded-md ${
+              currentPage === totalPages
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
           >
             <FaChevronRight className="inline" />
           </button>
@@ -887,8 +1317,6 @@ export const ReusableTable = ({
     );
   };
 
-
-
   return (
     <>
       <div className="bg-[#F1F1F0] shadow-sm h-[71vh]">
@@ -896,13 +1324,13 @@ export const ReusableTable = ({
           <div className="h-[68vh]">
             <table className="">
               <thead className="bg-gray-200 text-gray-800 ">
-
                 <tr>
                   {columns?.map((column, index) => (
                     <th
                       key={index}
-                      className={` font-medium text-gray-900 py-2 text-[12px] px-8 text-center uppercase  ${column.header !== "" ? "border-r border-white/50" : ""
-                        } `}
+                      className={` font-medium text-gray-900 py-2 text-[12px] px-8 text-center uppercase  ${
+                        column.header !== "" ? "border-r border-white/50" : ""
+                      } `}
                     >
                       {column.header}
                     </th>
@@ -913,32 +1341,29 @@ export const ReusableTable = ({
                     </th>
                   )}
                 </tr>
-
-
-
-
-
               </thead>
               <tbody>
                 {currentItems?.length === 0 ? (
                   <tr>
-                    <td colSpan={columns?.length + (rowActions ? 1 : 0)} className="px-4 py-4 text-center text-gray-500">
+                    <td
+                      colSpan={columns?.length + (rowActions ? 1 : 0)}
+                      className="px-4 py-4 text-center text-gray-500"
+                    >
                       {emptyStateMessage}
                     </td>
                   </tr>
                 ) : (
                   currentItems?.map((item, index) => (
-
                     <tr
                       key={item.id}
-                      className={`hover:bg-gray-50 transition-colors border-b   border-gray-200 text-[12px] ${index % 2 === 0 ? "bg-white" : "bg-gray-100"
-                        }`}
+                      className={`hover:bg-gray-50 transition-colors border-b   border-gray-200 text-[12px] ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-100"
+                      }`}
                     >
-
                       {columns?.map((column, colIndex) => (
                         <td
                           key={colIndex}
-                          className={` ${column.className ? column.className : ""} ${column.header !== "" ? 'border-r border-white/50' : ''} h-7 px-1.5`}
+                          className={` ${column.className ? column.className : ""} ${column.header !== "" ? "border-r border-white/50" : ""} h-7 px-1.5`}
                         >
                           {column.accessor(item, index)}
                         </td>
@@ -951,9 +1376,18 @@ export const ReusableTable = ({
                                 className="text-blue-600  flex items-center   px-1  bg-blue-50 rounded"
                                 onClick={() => onView(item.id)}
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
                                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               </button>
                             )}
@@ -962,7 +1396,12 @@ export const ReusableTable = ({
                                 className="text-green-600 gap-1 px-1   bg-green-50 rounded"
                                 onClick={() => onEdit(item.id)}
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
                                   <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                 </svg>
                               </button>
@@ -970,10 +1409,21 @@ export const ReusableTable = ({
                             {onDelete && (
                               <button
                                 className=" text-red-800 flex items-center gap-1 px-1  bg-red-50 rounded"
-                                onClick={() => onDelete(item.id, item?.childRecord)}
+                                onClick={() =>
+                                  onDelete(item.id, item?.childRecord)
+                                }
                               >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  viewBox="0 0 20 20"
+                                  fill="currentColor"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                                 {/* <span className="text-xs">delete</span> */}
                               </button>
@@ -992,16 +1442,9 @@ export const ReusableTable = ({
       <div className="h-[10vh]">
         <Pagination />
       </div>
-
     </>
-
-
-
-
-
   );
 };
-
 
 export const ToggleButton = ({
   name,
@@ -1024,8 +1467,10 @@ export const ToggleButton = ({
   return (
     <div>
       <div className="">
-        <label className={`block  font-bold text-slate-700 mb-1 text-xs`}>{required ? <RequiredLabel name={name} /> : `${name}`}</label>
-        <div className="flex items-center mt-1" >
+        <label className={`block  font-bold text-slate-700 mb-1 text-xs`}>
+          {required ? <RequiredLabel name={name} /> : `${name}`}
+        </label>
+        <div className="flex items-center mt-1">
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
@@ -1044,61 +1489,66 @@ export const ToggleButton = ({
             <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full peer-checked:translate-x-6 transition-transform duration-300 shadow-sm"></div>
           </label>
 
-          <span className="ml-2 block text-xs font-bold text-gray-600">{value ? "Active" : "Inactive"}</span>
+          <span className="ml-2 block text-xs font-bold text-gray-600">
+            {value ? "Active" : "Inactive"}
+          </span>
         </div>
       </div>
     </div>
   );
 };
 
-
-
-export const TextInputNew1 = forwardRef(({
-  name,
-  label,
-  type = "text",
-  value,
-  setValue,
-  readOnly = false,
-  className = "",
-  required = false,
-  disabled = false,
-  tabIndex = null,
-  onBlur = null,
-  width = "full",
-  max,
-  handleChange
-}, ref) => {
-  return (
-    <div className={`mb ${width}`}>
-      {name && (
-        <label className="block text-xs font-bold text-gray-600 mb-1">
-          {required ? <RequiredLabel name={label ? label : name} /> : name}
-        </label>
-      )}
-      <input
-        ref={ref}  // ✅ ref attached here
-        type={type}
-        value={value}
-        onChange={(e) => {
-          const val = e.target.value.toUpperCase();
-          setValue(val);
-          if (handleChange) handleChange(val);
-        }}
-        onBlur={onBlur}
-        placeholder={name}
-        readOnly={readOnly}
-        disabled={disabled}
-        tabIndex={tabIndex ?? undefined}
-        max={max ? String(max) : undefined}
-        className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
+export const TextInputNew1 = forwardRef(
+  (
+    {
+      name,
+      label,
+      type = "text",
+      value,
+      setValue,
+      readOnly = false,
+      className = "",
+      required = false,
+      disabled = false,
+      tabIndex = null,
+      onBlur = null,
+      width = "full",
+      max,
+      handleChange,
+    },
+    ref,
+  ) => {
+    return (
+      <div className={`mb ${width}`}>
+        {name && (
+          <label className="block text-xs font-bold text-gray-600 mb-1">
+            {required ? <RequiredLabel name={label ? label : name} /> : name}
+          </label>
+        )}
+        <input
+          ref={ref} // ✅ ref attached here
+          type={type}
+          value={value}
+          onChange={(e) => {
+            const val = e.target.value.toUpperCase();
+            setValue(val);
+            if (handleChange) handleChange(val);
+          }}
+          onBlur={onBlur}
+          placeholder={name}
+          readOnly={readOnly}
+          disabled={disabled}
+          tabIndex={tabIndex ?? undefined}
+          max={max ? String(max) : undefined}
+          className={`w-full px-3 py-1.5 text-xs border border-gray-300 rounded-lg
           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
           transition-all duration-150 shadow-sm ${readOnly || disabled ? "bg-slate-100" : ""}
           ${className}`}
-      />
-    </div>
-  );
-});
+        />
+      </div>
+    );
+  },
+);
 
 export const ReusableSearchableInputNewCustomer = forwardRef(
   (
@@ -1107,7 +1557,7 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
       placeholder,
       onDeleteItem,
       component,
-      setSearchTerm,   // selected value (partyId)
+      setSearchTerm, // selected value (partyId)
       searchTerm,
       readOnly,
       nextRef,
@@ -1118,22 +1568,20 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
       id,
     },
 
-    ref
-
+    ref,
   ) => {
     /* ---------------------------------- DATA ---------------------------------- */
 
     const companyId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId"
+      sessionStorage.getItem("sessionId") + "userCompanyId",
     );
     const userId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userId"
+      sessionStorage.getItem("sessionId") + "userId",
     );
 
     const { data: partyList } = useGetPartyQuery({
       params: { companyId, userId },
     });
-
 
     /* ---------------------------------- STATE --------------------------------- */
 
@@ -1142,7 +1590,7 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
     const [editingItem, setEditingItem] = useState(null);
     const [openModel, setOpenModel] = useState(false);
 
-    const [search, setSearch] = useState("");           // 🔹 search text
+    const [search, setSearch] = useState(""); // 🔹 search text
     const [filteredPages, setFilteredPages] = useState([]);
     const [isListShow, setIsListShow] = useState(false);
 
@@ -1150,9 +1598,7 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
     const modal = useModal();
     const { openAddModal } = modal || {};
 
-
-
-    const filtered = partyList?.data?.filter(i => i.isCustomer)
+    const filtered = partyList?.data?.filter((i) => i.isCustomer);
 
     /* ---------------------------- OUTSIDE CLICK ---------------------------- */
     // useEffect(() => {
@@ -1160,17 +1606,19 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
     //   setIsDropdownOpen(true);
     // }, []);
 
-
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (containerRef.current && !containerRef.current.contains(event.target)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
           setIsDropdownOpen(false);
-          setIsListShow(false)
-
+          setIsListShow(false);
         }
       };
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     /* ---------------------------- FILTER PARTIES ---------------------------- */
@@ -1179,18 +1627,18 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
       if (!partyList?.data) return;
 
       if (!search.trim()) {
-        setFilteredPages(partyList?.data?.filter(i => i.isCustomer));
+        setFilteredPages(partyList?.data?.filter((i) => i.isCustomer));
         return;
       }
 
-      const filtered = partyList?.data?.filter((item) =>
-        item.isCustomer &&
-        item?.name?.toLowerCase().includes(search.toLowerCase())
+      const filtered = partyList?.data?.filter(
+        (item) =>
+          item.isCustomer &&
+          item?.name?.toLowerCase().includes(search.toLowerCase()),
       );
 
       setFilteredPages(filtered);
     }, [search, partyList]);
-
 
     /* ---------------------------- ARROW NAVIGATION --------------------------- */
 
@@ -1291,8 +1739,8 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
                   placeholder={placeholder}
                   value={findFromList(
                     searchTerm,
-                    partyList?.data?.filter(i => i.isCustomer),
-                    "name"
+                    partyList?.data?.filter((i) => i.isCustomer),
+                    "name",
                   )}
                   onFocus={() => {
                     setIsListShow(true);
@@ -1399,7 +1847,6 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
                           e.preventDefault();
                           nextRef?.current?.focus();
                         }
-
                       }
                     }}
                   >
@@ -1433,15 +1880,14 @@ export const ReusableSearchableInputNewCustomer = forwardRef(
                     setIsDropdownOpen(false);
                     openAddModal();
                   }}
-                >
-                </button>
+                ></button>
               )}
             </div>
           )}
         </div>
       </>
     );
-  }
+  },
 );
 export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
   (
@@ -1450,7 +1896,7 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
       placeholder,
       onDeleteItem,
       component,
-      setSearchTerm,   // selected value (partyId)
+      setSearchTerm, // selected value (partyId)
       searchTerm,
       readOnly,
       nextRef,
@@ -1461,23 +1907,22 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
       id,
     },
 
-    ref
-
+    ref,
   ) => {
     /* ---------------------------------- DATA ---------------------------------- */
 
     const companyId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId"
+      sessionStorage.getItem("sessionId") + "userCompanyId",
     );
     const userId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userId"
+      sessionStorage.getItem("sessionId") + "userId",
     );
 
     const { data: partyList } = useGetPartyQuery({
       params: { companyId, userId, isAddessCombined: true },
     });
 
-    console.log(partyList, "partyList")
+    console.log(partyList, "partyList");
 
     /* ---------------------------------- STATE --------------------------------- */
 
@@ -1485,9 +1930,9 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
     const [tooltipVisible, setTooltipVisible] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [openModel, setOpenModel] = useState(false);
-    const [childId, setChildId] = useState('')
+    const [childId, setChildId] = useState("");
 
-    const [search, setSearch] = useState("");           // 🔹 search text
+    const [search, setSearch] = useState(""); // 🔹 search text
     const [filteredPages, setFilteredPages] = useState([]);
     const [isListShow, setIsListShow] = useState(false);
 
@@ -1495,26 +1940,25 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
     const modal = useModal();
     const { openAddModal } = modal || {};
 
-
-
-
     /* ---------------------------- OUTSIDE CLICK ---------------------------- */
     // useEffect(() => {
     //   if (id) return;
     //   setIsDropdownOpen(true);
     // }, []);
 
-
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (containerRef.current && !containerRef.current.contains(event.target)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
           setIsDropdownOpen(false);
-          setIsListShow(false)
-
+          setIsListShow(false);
         }
       };
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     /* ---------------------------- FILTER PARTIES ---------------------------- */
@@ -1528,13 +1972,11 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
       }
 
       const filtered = partyList?.data?.filter((item) =>
-
-        item?.name?.toLowerCase().includes(search.toLowerCase())
+        item?.name?.toLowerCase().includes(search.toLowerCase()),
       );
 
       setFilteredPages(filtered);
     }, [search, partyList]);
-
 
     /* ---------------------------- ARROW NAVIGATION --------------------------- */
 
@@ -1570,7 +2012,6 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
       setIsListShow(false);
       setOpenModel(true);
       // setChildId(isChildid)
-
     };
 
     const handleDelete = (id, e) => {
@@ -1637,8 +2078,8 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
                   placeholder={placeholder}
                   value={findFromList(
                     searchTerm,
-                    partyList?.data?.filter(i => i.isCustomer),
-                    "name"
+                    partyList?.data?.filter((i) => i.isCustomer),
+                    "name",
                   )}
                   onFocus={() => {
                     setIsListShow(true);
@@ -1745,7 +2186,6 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
                           e.preventDefault();
                           nextRef?.current?.focus();
                         }
-
                       }
                     }}
                   >
@@ -1763,7 +2203,9 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
                       </button>
                       <button
                         className="text-red-600 hover:text-red-800 p-1"
-                        onClick={(e) => handleDelete(item?.id, e, item?.parentId)}
+                        onClick={(e) =>
+                          handleDelete(item?.id, e, item?.parentId)
+                        }
                         title="Delete Customer"
                       >
                         <FaTrash className="text-sm" />
@@ -1780,15 +2222,14 @@ export const ReusableSearchableInputNewCustomerwithBranches = forwardRef(
                     setIsDropdownOpen(false);
                     openAddModal();
                   }}
-                >
-                </button>
+                ></button>
               )}
             </div>
           )}
         </div>
       </>
     );
-  }
+  },
 );
 
 export const ReusableSearchableInputNew = forwardRef(
@@ -1798,7 +2239,7 @@ export const ReusableSearchableInputNew = forwardRef(
       placeholder,
       onDeleteItem,
       component,
-      setSearchTerm,   // selected value (partyId)
+      setSearchTerm, // selected value (partyId)
       searchTerm,
       readOnly,
       nextRef,
@@ -1806,17 +2247,17 @@ export const ReusableSearchableInputNew = forwardRef(
       name,
       disabled,
       show,
-      id
+      id,
     },
-    ref
+    ref,
   ) => {
     /* ---------------------------------- DATA ---------------------------------- */
 
     const companyId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId"
+      sessionStorage.getItem("sessionId") + "userCompanyId",
     );
     const userId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userId"
+      sessionStorage.getItem("sessionId") + "userId",
     );
 
     const { data: partyList } = useGetPartyQuery({
@@ -1830,7 +2271,7 @@ export const ReusableSearchableInputNew = forwardRef(
     const [editingItem, setEditingItem] = useState(null);
     const [openModel, setOpenModel] = useState(false);
 
-    const [search, setSearch] = useState("");           // 🔹 search text
+    const [search, setSearch] = useState(""); // 🔹 search text
     const [filteredPages, setFilteredPages] = useState([]);
     const [isListShow, setIsListShow] = useState(false);
 
@@ -1838,25 +2279,24 @@ export const ReusableSearchableInputNew = forwardRef(
     const modal = useModal();
     const { openAddModal } = modal || {};
 
-
-
-
-
     /* ---------------------------- OUTSIDE CLICK ---------------------------- */
     // useEffect(() => {
     //   if (id) return;
     //   setIsDropdownOpen(true);
     // }, []);
 
-
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (containerRef.current && !containerRef.current.contains(event.target)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
           setIsDropdownOpen(false);
         }
       };
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     /* ---------------------------- FILTER PARTIES ---------------------------- */
@@ -1870,12 +2310,11 @@ export const ReusableSearchableInputNew = forwardRef(
       }
 
       const filtered = partyList?.data?.filter((item) =>
-        item?.name?.toLowerCase().includes(search.toLowerCase())
+        item?.name?.toLowerCase().includes(search.toLowerCase()),
       );
 
       setFilteredPages(filtered);
     }, [search, partyList]);
-
 
     /* ---------------------------- ARROW NAVIGATION --------------------------- */
 
@@ -1975,11 +2414,7 @@ export const ReusableSearchableInputNew = forwardRef(
                   ref={ref}
                   className="w-full pl-8 pr-2 py-1.5 text-xs border rounded-md"
                   placeholder={placeholder}
-                  value={findFromList(
-                    searchTerm,
-                    partyList?.data,
-                    "name"
-                  )}
+                  value={findFromList(searchTerm, partyList?.data, "name")}
                   onFocus={() => {
                     setIsListShow(true);
                     setIsDropdownOpen(true);
@@ -2022,7 +2457,10 @@ export const ReusableSearchableInputNew = forwardRef(
 
           {/* ---------------- DROPDOWN LIST ---------------- */}
           {isDropdownOpen && (
-            <div className="absolute w-full mt-1 max-h-40 overflow-y-auto border rounded bg-white z-20" ref={ref}>
+            <div
+              className="absolute w-full mt-1 max-h-40 overflow-y-auto border rounded bg-white z-20"
+              ref={ref}
+            >
               {filteredPages.length > 0 ? (
                 filteredPages?.map((item) => (
                   <div
@@ -2068,94 +2506,96 @@ export const ReusableSearchableInputNew = forwardRef(
         </div>
       </>
     );
-  }
+  },
 );
 
+export const DateInputNew = forwardRef(
+  (
+    {
+      name,
+      value,
+      setValue,
+      readOnly,
+      required = false,
+      type = "",
+      disabled = false,
+      tabIndex = null,
+      inputClass,
+      inputHead,
+      className,
+      nextRef,
+      isToday,
+    },
+    ref,
+  ) => {
+    const today = new Date().toISOString().split("T")[0];
+    const [pickerOpen, setPickerOpen] = useState(false);
 
-export const DateInputNew = forwardRef(({
-  name,
-  value,
-  setValue,
-  readOnly,
-  required = false,
-  type = "",
-  disabled = false,
-  tabIndex = null,
-  inputClass,
-  inputHead,
-  className,
-  nextRef,
-  isToday
-}, ref) => {
-  const today = new Date().toISOString().split("T")[0];
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-
-
-
-  const handleFocus = () => {
-    // Only attempt to show picker if browser supports it
-    if (type === "date" && ref?.current?.showPicker) {
-      ref.current.showPicker();
-    }
-  };
-
-  // const handleKeyDown = (e) => {
-  //   if (e.key === "Enter") {
-  //     console.log("Enter pressed!");
-  //     ref?.current?.showPicker();
-  //   }
-  // };
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-
-      if (!pickerOpen) {
-        // First Enter → open the date picker
-        ref.current?.showPicker();
-        setPickerOpen(true);
-      } else {
-        // Second Enter → remove focus (close picker)
-        ref.current?.blur(); // removes focus
-        setPickerOpen(false);
+    const handleFocus = () => {
+      // Only attempt to show picker if browser supports it
+      if (type === "date" && ref?.current?.showPicker) {
+        ref.current.showPicker();
       }
-    }
-  };
-  return (
-    <div className="grid-cols-1 md:grid-cols-3 items-center md:px-1">
-      {name && (
-        <label className={`block  font-bold text-slate-700 mb-1 text-xs ${required ? 'after:content-["*"] after:ml-0.5 after:text-red-500' : ""
-          }`}>
-          {name}
-        </label>
-      )}
-      <input
-        ref={ref}
-        tabIndex={tabIndex ?? undefined}
-        type={type}
-        disabled={disabled}
-        required={required}
-        min={isToday ? today : undefined}
-        className={`w-full px-2 py-1 text-xs border border-slate-300 rounded-md 
+    };
+
+    // const handleKeyDown = (e) => {
+    //   if (e.key === "Enter") {
+    //     console.log("Enter pressed!");
+    //     ref?.current?.showPicker();
+    //   }
+    // };
+    const handleKeyDown = (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+
+        if (!pickerOpen) {
+          // First Enter → open the date picker
+          ref.current?.showPicker();
+          setPickerOpen(true);
+        } else {
+          // Second Enter → remove focus (close picker)
+          ref.current?.blur(); // removes focus
+          setPickerOpen(false);
+        }
+      }
+    };
+    return (
+      <div className="grid-cols-1 md:grid-cols-3 items-center md:px-1">
+        {name && (
+          <label
+            className={`block  font-bold text-slate-700 mb-1 text-xs ${
+              required
+                ? 'after:content-["*"] after:ml-0.5 after:text-red-500'
+                : ""
+            }`}
+          >
+            {name}
+          </label>
+        )}
+        <input
+          ref={ref}
+          tabIndex={tabIndex ?? undefined}
+          type={type}
+          disabled={disabled}
+          required={required}
+          min={isToday ? today : undefined}
+          className={`w-full px-2 py-1 text-xs border border-slate-300 rounded-md 
           focus:border-indigo-300 focus:outline-none transition-all duration-200
           hover:border-slate-400 ${readOnly || disabled ? "bg-slate-100" : ""} ${className}`}
-        id="id"
-        value={value}
-        onFocus={handleFocus}
-        onKeyDown={handleKeyDown}
-        readOnly={readOnly}
-        onChange={(e) => {
-          setValue(e.target.value)
-          nextRef?.current?.focus()
-        }}
-      />
-    </div>
-  );
-});
-
-
-
-
+          id="id"
+          value={value}
+          onFocus={handleFocus}
+          onKeyDown={handleKeyDown}
+          readOnly={readOnly}
+          onChange={(e) => {
+            setValue(e.target.value);
+            nextRef?.current?.focus();
+          }}
+        />
+      </div>
+    );
+  },
+);
 
 export const TextAreaNew = ({
   name,
@@ -2196,15 +2636,16 @@ export const TextAreaNew = ({
           focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
           transition-all duration-150 shadow-sm  resize-y
 
-          ${readOnly || disabled
-            ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-            : "bg-white hover:border-gray-400"}
+          ${
+            readOnly || disabled
+              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+              : "bg-white hover:border-gray-400"
+          }
           ${inputClass}`}
       ></textarea>
     </div>
   );
 };
-
 
 export const ShowInvoicPendingCustomers = forwardRef(
   (
@@ -2213,7 +2654,7 @@ export const ShowInvoicPendingCustomers = forwardRef(
       placeholder,
       onDeleteItem,
       component,
-      setSearchTerm,   // selected value (partyId)
+      setSearchTerm, // selected value (partyId)
       searchTerm,
       readOnly,
       nextRef,
@@ -2223,26 +2664,25 @@ export const ShowInvoicPendingCustomers = forwardRef(
       show,
       id,
       supplierId,
-      partyList
+      partyList,
     },
 
-    ref
-
+    ref,
   ) => {
     /* ---------------------------------- DATA ---------------------------------- */
 
     const companyId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId"
+      sessionStorage.getItem("sessionId") + "userCompanyId",
     );
     const userId = secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userId"
+      sessionStorage.getItem("sessionId") + "userId",
     );
 
     // const { data: partyList } = useGetPartyNewQuery({
     //   params: { companyId, userId, isAddessCombined: true , id ,supplierId },
     // });
 
-    console.log(partyList, "partyList")
+    console.log(partyList, "partyList");
 
     /* ---------------------------------- STATE --------------------------------- */
 
@@ -2250,9 +2690,9 @@ export const ShowInvoicPendingCustomers = forwardRef(
     const [tooltipVisible, setTooltipVisible] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [openModel, setOpenModel] = useState(false);
-    const [childId, setChildId] = useState('')
+    const [childId, setChildId] = useState("");
 
-    const [search, setSearch] = useState("");           // 🔹 search text
+    const [search, setSearch] = useState(""); // 🔹 search text
     const [filteredPages, setFilteredPages] = useState([]);
     const [isListShow, setIsListShow] = useState(false);
 
@@ -2260,26 +2700,25 @@ export const ShowInvoicPendingCustomers = forwardRef(
     const modal = useModal();
     const { openAddModal } = modal || {};
 
-
-
-
     /* ---------------------------- OUTSIDE CLICK ---------------------------- */
     // useEffect(() => {
     //   if (id) return;
     //   setIsDropdownOpen(true);
     // }, []);
 
-
     useEffect(() => {
       const handleClickOutside = (event) => {
-        if (containerRef.current && !containerRef.current.contains(event.target)) {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(event.target)
+        ) {
           setIsDropdownOpen(false);
-          setIsListShow(false)
-
+          setIsListShow(false);
         }
       };
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
     /* ---------------------------- FILTER PARTIES ---------------------------- */
@@ -2293,13 +2732,11 @@ export const ShowInvoicPendingCustomers = forwardRef(
       }
 
       const filtered = partyList?.data?.filter((item) =>
-
-        item?.name?.toLowerCase().includes(search.toLowerCase())
+        item?.name?.toLowerCase().includes(search.toLowerCase()),
       );
 
       setFilteredPages(filtered);
     }, [search, partyList]);
-
 
     /* ---------------------------- ARROW NAVIGATION --------------------------- */
 
@@ -2334,8 +2771,7 @@ export const ShowInvoicPendingCustomers = forwardRef(
       setIsDropdownOpen(false);
       setIsListShow(false);
       setOpenModel(true);
-      setChildId(isChildid)
-
+      setChildId(isChildid);
     };
 
     const handleDelete = (id, e) => {
@@ -2402,8 +2838,8 @@ export const ShowInvoicPendingCustomers = forwardRef(
                   placeholder={placeholder}
                   value={findFromList(
                     searchTerm,
-                    partyList?.data?.filter(i => i.isCustomer),
-                    "name"
+                    partyList?.data?.filter((i) => i.isCustomer),
+                    "name",
                   )}
                   onFocus={() => {
                     setIsListShow(true);
@@ -2510,7 +2946,6 @@ export const ShowInvoicPendingCustomers = forwardRef(
                           e.preventDefault();
                           nextRef?.current?.focus();
                         }
-
                       }
                     }}
                   >
@@ -2520,14 +2955,16 @@ export const ShowInvoicPendingCustomers = forwardRef(
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         className="text-indigo-600 hover:text-indigo-800 p-1"
-                        onClick={(e) => handleEdit(item?.id, e,)}
+                        onClick={(e) => handleEdit(item?.id, e)}
                         title="Edit Customer"
                       >
                         <FaEdit className="text-sm" />
                       </button>
                       <button
                         className="text-red-600 hover:text-red-800 p-1"
-                        onClick={(e) => handleDelete(item?.id, e, item?.parentId)}
+                        onClick={(e) =>
+                          handleDelete(item?.id, e, item?.parentId)
+                        }
                         title="Delete Customer"
                       >
                         <FaTrash className="text-sm" />
@@ -2544,13 +2981,133 @@ export const ShowInvoicPendingCustomers = forwardRef(
                     setIsDropdownOpen(false);
                     openAddModal();
                   }}
-                >
-                </button>
+                ></button>
               )}
             </div>
           )}
         </div>
       </>
     );
-  }
+  },
 );
+
+export const customStyles = {
+  control: (base) => ({
+    ...base,
+    border: "none",
+    boxShadow: "none",
+    backgroundColor: "transparent",
+    minHeight: "unset",
+    height: "20px",
+    fontSize: "12px",
+    cursor: "pointer",
+  }),
+
+  placeholder: (base) => ({
+    ...base,
+    color: "#9ca3af", // Tailwind gray-400
+    fontSize: "12px",
+  }),
+
+  singleValue: (base) => ({
+    ...base,
+    fontSize: "12px",
+    color: "black",
+  }),
+
+  valueContainer: (base) => ({
+    ...base,
+    padding: "0 4px",
+    height: "20px",
+  }),
+
+  dropdownIndicator: (base) => ({
+    ...base,
+    padding: 0,
+    paddingRight: 2,
+    svg: {
+      width: 14,
+      height: 14,
+    },
+    color: "black",
+  }),
+
+  indicatorSeparator: () => ({
+    display: "none",
+  }),
+
+  input: (base) => ({
+    ...base,
+    margin: 0,
+    padding: 0,
+    fontSize: "12px",
+    color: "black",
+  }),
+
+  clearIndicator: () => ({
+    display: "none",
+  }),
+
+  option: (base, state) => ({
+    ...base,
+    fontSize: "12px",
+    padding: "4px 6px", // reduce inside padding
+    minHeight: "18px", // reduce height
+    lineHeight: "18px",
+    backgroundColor: state.isSelected
+      ? "#d1d5db" // gray-200
+      : state.isFocused
+        ? "#e5e7eb" // gray-100
+        : "white",
+    color: "black",
+  }),
+
+  menu: (base) => ({
+    ...base,
+    zIndex: 9999,
+    fontSize: "12px",
+  }),
+  menuList: (base) => ({
+    ...base,
+    maxHeight: "120px", // 🔥 reduce dropdown height
+    paddingTop: 0,
+    paddingBottom: 0,
+  }),
+};
+
+export default function FxSelect({
+  value,
+  onChange,
+  options,
+  placeholder = "",
+  readOnly = false,
+  onBlur,
+  onKeyDown,
+  inputId,
+}) {
+  return (
+    <Select
+      styles={customStyles}
+      onInputChange={(value, { action }) => {
+        if (action === "input-change") {
+          return value.toUpperCase(); //  force uppercase typing
+        }
+        return value;
+      }}
+      components={{
+        // DropdownIndicator: () => null,
+        IndicatorSeparator: () => null, // remove separator
+      }}
+      isClearable
+      isDisabled={readOnly}
+      options={options}
+      value={options.find((opt) => opt.value === value) || null}
+      onChange={(selected) => onChange(selected?.value || "")}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      placeholder={placeholder}
+      menuPortalTarget={document.body}
+      inputId={inputId}
+    />
+  );
+}

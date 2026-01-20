@@ -267,7 +267,7 @@ export default function Form() {
                     <Modal
                         isOpen={form}
                         form={form}
-                        widthClass={"w-[40%] h-[45%]"}
+                        widthClass={"w-[40%] h-[300px]"}
                         onClose={() => {
                             setForm(false);
                             // setErrors({});
