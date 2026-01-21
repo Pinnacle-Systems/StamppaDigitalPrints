@@ -84,7 +84,6 @@ async function get(req) {
   const { startTime: startDateStartTime } = getDateTimeRange(startDate);
   const { endTime: endDateEndTime } = getDateTimeRange(endDate);
   let finYearDate = await getFinYearStartTimeEndTime(finYearId);
-  console.log(finYearDate, "");
   const shortCode = finYearDate
     ? getYearShortCodeForFinYear(
         finYearDate?.startDateStartTime,
@@ -135,12 +134,6 @@ async function get(req) {
             contains: serachDocNo,
           }
         : undefined,
-      transType:
-        filterPoTypes && filterPoTypes.length > 0
-          ? {
-              in: filterPoTypes.split(",").map((i) => i),
-            }
-          : undefined,
       OR:
         supplierId || Boolean(filterParties)
           ? [
@@ -156,26 +149,25 @@ async function get(req) {
               },
             ]
           : undefined,
-      supplier: {
+      Supplier: {
         aliasName: Boolean(searchSupplierAliasName)
           ? { contains: searchSupplierAliasName }
           : undefined,
         name: Boolean(supplier) ? { contains: supplier } : undefined,
       },
-      poMaterial: searchMaterial ? { contains: searchMaterial } : undefined,
     },
     orderBy: {
       id: "desc",
     },
     include: {
-      supplier: {
+      Supplier: {
         select: {
           aliasName: true,
           name: true,
         },
       },
 
-      PoItems: {
+      poItems: {
         select: {
           qty: true,
         },
@@ -208,30 +200,8 @@ async function getOne(id) {
   let po = await prisma.po.findUnique({
     where: { id: parseInt(id) },
     include: {
-      PoItems: {
-        select: {
-          id: true,
-          yarnId: true,
-          colorId: true,
-          uomId: true,
-          requiredQty: true,
-          qty: true,
-          price: true,
-          poId: true,
-          count: true,
-          isDeleted: true,
-          requirementPlanningItemsId: true,
-          orderId: true,
-          taxPercent: true,
-          hsnId: true,
-          orderDetailsId: true,
-          isPurchaseCancel: true,
-          RequirementPlanningItems: {
-            select: { requiredQty: true },
-          },
-        },
-      },
-      supplier: {
+      poItems: true,
+      Supplier: {
         select: {
           aliasName: true,
           contactPersonName: true,
@@ -264,7 +234,7 @@ async function getOne(id) {
 
   // Compute PoItems with balanceQty
   const updatedItems =
-    po.PoItems?.map((item) => {
+    po.poItems?.map((item) => {
       const qty = parseFloat(item.qty) || 0;
       const req = parseFloat(item?.RequirementPlanningItems?.requiredQty) || 0;
 
@@ -276,7 +246,7 @@ async function getOne(id) {
     }) || [];
 
   // Assign updated PoItems back to PO object
-  po.PoItems = updatedItems;
+  po.poItems = updatedItems;
 
   return {
     statusCode: 0,
@@ -1025,7 +995,6 @@ async function create(body) {
       shortCode,
       finYearDate?.startDateStartTime,
       finYearDate?.endDateEndTime,
-      draftSave,
     );
     let data;
     await prisma.$transaction(async (tx) => {
@@ -1045,7 +1014,7 @@ async function create(body) {
                 ? parseInt(deliveryToId)
                 : null
               : null,
-          deliveryPartyId:
+          deliveryToId:
             deliveryType === "ToParty"
               ? deliveryToId
                 ? parseInt(deliveryToId)
@@ -1218,7 +1187,7 @@ async function update(id, body) {
       id: parseInt(id),
     },
     include: {
-      PoItems: {
+      poItems: {
         select: {
           id: true,
         },
@@ -1252,7 +1221,7 @@ async function update(id, body) {
               ? parseInt(deliveryToId)
               : null
             : null,
-        deliveryPartyId:
+        deliveryToId:
           deliveryType === "ToParty"
             ? deliveryToId
               ? parseInt(deliveryToId)

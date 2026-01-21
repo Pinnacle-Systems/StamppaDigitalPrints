@@ -58,8 +58,6 @@ const PurchaseOrderForm = ({
   setId,
   readOnly,
   setReadOnly,
-  docId,
-  setDocId,
   onNew,
   taxTypeList,
   supplierList,
@@ -73,14 +71,16 @@ const PurchaseOrderForm = ({
 }) => {
   const today = new Date();
 
-  const [date, setDate] = useState(moment.utc(today).format("YYYY-MM-DD"));
+  const [docDate, setDocDate] = useState(
+    moment.utc(today).format("YYYY-MM-DD"),
+  );
   const [taxTemplateId, setTaxTemplateId] = useState("");
   const [payTermId, setPayTermId] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [poType, setPoType] = useState("Order Purchase");
   const [poMaterial, setPoMaterial] = useState("DyedYarn");
   const [supplierId, setSupplierId] = useState("");
-  const [term, setTerm] = useState("");
+  const [termsAndCondition, setTermsAndCondition] = useState("");
   const [poItems, setPoItems] = useState([]);
   const [discountType, setDiscountType] = useState("");
   const [discountValue, setDiscountValue] = useState(0);
@@ -88,7 +88,7 @@ const PurchaseOrderForm = ({
   const [remarks, setRemarks] = useState("");
   const [PurchaseType, setPurchaseType] = useState("General Purchase");
   const [summary, setSummary] = useState(false);
-
+  const [docId, setDocId] = useState("");
   const [deliveryType, setDeliveryType] = useState("");
   const [deliveryToId, setDeliveryToId] = useState("");
   const [showExtraCharge, setShowExtraCharge] = useState(false);
@@ -119,17 +119,15 @@ const PurchaseOrderForm = ({
     (data) => {
       // setReadOnly(true)
 
-      setPoType(data?.poType ? data?.poType : "General Purchase");
-      setDate(
-        data?.createdAt
-          ? moment.utc(data.createdAt).format("YYYY-MM-DD")
+      setPoType(data?.poType ? data?.poType : "GENERAL");
+      setDocDate(
+        data?.docDate
+          ? moment.utc(data.docDate).format("YYYY-MM-DD")
           : moment.utc(new Date()).format("YYYY-MM-DD"),
       );
-      setPoMaterial(data?.poMaterial ? data?.poMaterial : "");
 
-      setPoItems(data?.PoItems ? data?.PoItems : []);
+      setPoItems(data?.poItems ? data?.poItems : []);
       setDocId(data?.docId ? data?.docId : "New");
-      setPayTermId(data?.payTermId || "");
       setDiscountType(data?.discountType || "");
       setDiscountValue(data?.discountValue || "0");
       setSupplierId(data?.supplierId || "");
@@ -140,14 +138,16 @@ const PurchaseOrderForm = ({
       setDeliveryToId(
         data?.deliveryType === "ToSelf"
           ? data?.deliveryBranchId
-          : data?.deliveryPartyId || "",
+          : data?.deliveryToId || "",
       );
       setRemarks(data?.remarks || "");
       setPurchaseType(data?.PurchaseType ? data?.PurchaseType : "");
       setOrderId(data?.orderId ? data?.orderId : "");
       setRequirementId(data?.requirementId ? data?.requirementId : "");
       setTaxTemplateId(data?.taxTemplateId ? data?.taxTemplateId : "");
-      setTerm(data?.termsAndCondtion ? data?.termsAndCondtion : "");
+      setTermsAndCondition(
+        data?.termsAndCondition ? data?.termsAndCondition : "",
+      );
     },
     [id],
   );
@@ -164,26 +164,19 @@ const PurchaseOrderForm = ({
   let data = {
     supplierId,
     dueDate,
-    payTermId,
+    docDate,
     branchId,
     id,
     userId,
     remarks,
-    poItems: poItems?.filter(
-      (po) => po.yarnId || po.fabricId || po.accessoryId || po.yarncategoryId,
-    ),
+    poItems: poItems?.filter((po) => po.styleItemId),
     deliveryType,
     deliveryToId,
     discountType,
     discountValue,
     finYearId,
-    orderId,
-    PurchaseType,
-    requirementId,
-    poMaterial,
     poType,
     taxTemplateId,
-    term,
   };
 
   const handleSubmitCustom = async (callback, data, text, nextProcess) => {
@@ -206,10 +199,11 @@ const PurchaseOrderForm = ({
 
         if (returnData.statusCode === 0) {
           if (nextProcess == "new") {
-            onNew();
+            setId(0);
+            setDocId("New");
+            syncFormWithDb(undefined);
           }
           if (nextProcess == "close") {
-            onNew();
             onClose();
           } else {
             setId(returnData?.data?.id);
@@ -224,30 +218,14 @@ const PurchaseOrderForm = ({
   };
 
   const validateData = (data) => {
-    let mandatoryFields = ["uomId", "price"];
-    if (poMaterial === "GreyYarn" || poMaterial === "DyedYarn") {
-      mandatoryFields = [...mandatoryFields, "yarnId"];
-    } else if (poMaterial === "GreyFabric" || poMaterial === "DyedFabric") {
-      mandatoryFields = [
-        ...mandatoryFields,
-        ...[
-          "fabricId",
-          "designId",
-          "gaugeId",
-          "loopLengthId",
-          "gsmId",
-          "kDiaId",
-          "fDiaId",
-        ],
-      ];
-    } else if (poMaterial === "Accessory") {
-      mandatoryFields = [...mandatoryFields, ...["accessoryId"]];
-    }
+    let mandatoryFields = ["styleItemId", "hsnId","uomId","qty","price"];
 
     return (
-      data.poMaterial &&
-      data.supplierId &&
       data?.dueDate &&
+      data.poType &&
+      data.taxTemplateId &&
+      data.supplierId &&
+      data.deliveryType &&
       isGridDatasValid(data?.poItems, false, mandatoryFields) &&
       data?.poItems?.length !== 0
     );
@@ -268,8 +246,6 @@ const PurchaseOrderForm = ({
       return;
     }
     if (nextProcess == "draft" && !id) {
-      console.log(nextProcess, "nextProcess");
-
       handleSubmitCustom(
         addData,
         (data = { ...data, draftSave: true }),
@@ -279,7 +255,7 @@ const PurchaseOrderForm = ({
     } else if (id && nextProcess == "draft") {
       handleSubmitCustom(
         updateData,
-        (data = { ...data, draftSave: true }),
+        { ...data, draftSave: true },
         "Updated",
         nextProcess,
       );
@@ -325,7 +301,6 @@ const PurchaseOrderForm = ({
       .map(([key, arr]) => [key, arr.filter((item) => item && item.yarnId)])
       .filter(([_, arr]) => arr.length > 0),
   );
-  console.log(filtered, "filtered");
 
   const { data: deliveryToBranch } = useGetBranchByIdQuery(deliveryToId, {
     skip: deliveryType === "ToParty",
@@ -363,7 +338,7 @@ const PurchaseOrderForm = ({
           <h1 className="text-lg font-bold text-gray-800">Purchase Order</h1>
           <button
             onClick={() => {
-              onNew();
+              // onNew();
               onClose();
             }}
             className="text-indigo-600 hover:text-indigo-700"
@@ -381,7 +356,7 @@ const PurchaseOrderForm = ({
               <ReusableInput label="Purchase Order No" readOnly value={docId} />
               <ReusableInput
                 label="Purchase Order Date"
-                value={date}
+                value={docDate}
                 type={"date"}
                 required={true}
                 readOnly={true}
@@ -533,6 +508,7 @@ const PurchaseOrderForm = ({
         </div>
         <fieldset className="">
           <PoItems
+            id={id}
             poItems={poItems}
             setPoItems={setPoItems}
             readOnly={readOnly}
@@ -551,9 +527,9 @@ const PurchaseOrderForm = ({
               </h2>
 
               <select
-                value={term}
+                value={termsAndCondition}
                 onChange={(e) => {
-                  setTerm(e.target.value);
+                  setTermsAndCondition(e.target.value);
                 }}
                 readOnly={readOnly}
                 className="text-left h-15  w-full rounded py-1 border-2 border-gray-200 text-[13px]"
@@ -575,8 +551,12 @@ const PurchaseOrderForm = ({
             <textarea
               disabled={readOnly}
               className="w-full h-14 overflow-auto px-2.5 py-2 text-xs border border-slate-300 rounded-md  focus:ring-1 focus:ring-indigo-200 focus:border-indigo-500"
-              value={findFromList(term, termsData?.data, "termsAndCondition")}
-              onChange={(e) => setTerm(e.target.value)}
+              value={findFromList(
+                termsAndCondition,
+                termsData?.data,
+                "termsAndCondition",
+              )}
+              onChange={(e) => setTermsAndCondition(e.target.value)}
               placeholder="Select or type Terms & Conditions..."
             />
           </div>

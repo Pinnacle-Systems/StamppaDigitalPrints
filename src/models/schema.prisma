@@ -95,6 +95,8 @@ model Branch {
   DeliveryChallan  DeliveryChallan[]
   DeliveryInvoice  DeliveryInvoice[]
   openingBalances  OpeningBalance[]
+  DeliveryBranchPo Po[]               @relation(name: "deliveryBranch")
+  PoRaised         Po[]               @relation(name: "poRaisedBranch")
 }
 
 model UserOnBranch {
@@ -156,6 +158,8 @@ model User {
   partyBranchUpdatedBy     PartyBranch[]     @relation(name: "updatedBy")
   openingBalanceCreatedBy  OpeningBalance[]  @relation(name: "createdBy")
   openingBalancesUpdatedBy OpeningBalance[]  @relation(name: "updatedBy")
+  poCreatedBy              Po[]              @relation(name: "createdBy")
+  poUpdatedBy              Po[]              @relation(name: "updatedBy")
 }
 
 model Employee {
@@ -395,6 +399,8 @@ model Party {
   attachments          attachments[]
   PartyBranch          PartyBranch[]
   openingBalances      OpeningBalance[]
+  PoSupplier           Po[]              @relation(name: "supplier")
+  PoDelivery           Po[]              @relation(name: "deliveryTo")
 }
 
 model PartyBranch {
@@ -512,6 +518,7 @@ model Uom {
   SalesReturnItems     SalesReturnItems[]
   DeliveryChallanItems DeliveryChallanItems[]
   DeliveryInvoiceItems DeliveryInvoiceItems[]
+  poItems              PoItems[]
 }
 
 model ProductUomPriceDetails {
@@ -808,6 +815,7 @@ model StyleItem {
   active               Boolean?               @default(false)
   DeliveryChallanItems DeliveryChallanItems[]
   DeliveryInvoiceItems DeliveryInvoiceItems[]
+  poItems              PoItems[]
 }
 
 model DeliveryChallan {
@@ -981,6 +989,7 @@ model TaxTemplate {
   companyId          Int
   active             Boolean              @default(true)
   TaxTemplateDetails TaxTemplateDetails[]
+  pos                Po[]
 }
 
 model TaxTemplateDetails {
@@ -1001,6 +1010,7 @@ model Hsn {
   tax                  String?
   DeliveryChallanItems DeliveryChallanItems[]
   DeliveryInvoiceItems DeliveryInvoiceItems[]
+  poItems              PoItems[]
 }
 
 model BranchType {
@@ -1028,7 +1038,53 @@ model OpeningBalance {
   docId        String?
   date         DateTime?
   partCategory String?
-  Party        Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  Party        Party     @relation(fields: [partyId], references: [id], onDelete: Cascade)
   partyId      Int
   amount       Int?
+}
+
+model Po {
+  id               Int          @id @default(autoincrement())
+  docId            String?
+  docDate          DateTime?
+  dueDate          DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  createdBy        User?        @relation("createdBy", fields: [createdById], references: [id])
+  createdById      Int?
+  updatedBy        User?        @relation("updatedBy", fields: [updatedById], references: [id])
+  updatedById      Int?
+  poType           String?
+  TaxTemplate      TaxTemplate? @relation(fields: [taxTemplateId], references: [id], onDelete: Cascade)
+  taxTemplateId    Int?
+  active           Boolean?     @default(true)
+  deliveryType     String?
+  DeliveryParty    Party?       @relation("deliveryTo", fields: [deliveryToId], references: [id])
+  deliveryToId     Int?
+  DeliveryBranch   Branch?      @relation("deliveryBranch", fields: [deliveryBranchId], references: [id])
+  deliveryBranchId Int?
+  termsAndCondtion String?
+  remarks          String?
+  Branch           Branch?      @relation("poRaisedBranch", fields: [branchId], references: [id])
+  branchId         Int?
+  Supplier         Party?       @relation("supplier", fields: [supplierId], references: [id])
+  supplierId       Int?
+  poItems          PoItems[]
+}
+
+model PoItems {
+  id            Int        @id @default(autoincrement())
+  Po            Po?        @relation(fields: [poId], references: [id], onDelete: Cascade)
+  poId          Int?
+  Uom           Uom?       @relation(fields: [uomId], references: [id])
+  uomId         Int?
+  StyleItem     StyleItem? @relation(fields: [styleItemId], references: [id])
+  styleItemId   Int?
+  Hsn           Hsn?       @relation(fields: [hsnId], references: [id])
+  hsnId         Int?
+  qty           Float?
+  price         Float?
+  discountType  String?
+  discountValue Float?
+  taxPercent    Float?
 }

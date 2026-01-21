@@ -49,8 +49,8 @@ export const statusDropdown = [
 ]
 
 export const poTypes = [
-    { show: "ORDER", value: "Order Purchase" },
-    { show: "GENERAL", value: "General Purchase" },
+    { show: "ORDER", value: "ORDER" },
+    { show: "GENERAL", value: "GENERAL" },
 ]
 
 export const paymentTypes = [

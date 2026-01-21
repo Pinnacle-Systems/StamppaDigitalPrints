@@ -1,5 +1,6 @@
 import { useState } from "react";
 import PurchaseOrderForm from "./PurchaseOrderForm.js";
+import PurchaseOrderFormReport from "./PurchaseOrderFormReport.js"
 import { getCommonParams } from "../../../Utils/helper.js";
 import { FaPlus } from "react-icons/fa";
 import { useGetTaxTemplateQuery } from "../../../redux/services/TaxTemplateServices.js";
@@ -8,6 +9,8 @@ import { useGetBranchQuery } from "../../../redux/services/BranchMasterService.j
 import { useGetStyleItemMasterQuery } from "../../../redux/services/StyleItemMasterService.js";
 import { useGetHsnMasterQuery } from "../../../redux/services/HsnMasterServices.js";
 import { useGetUnitOfMeasurementMasterQuery } from "../../../redux/uniformService/UnitOfMeasurementServices";
+import Swal from "sweetalert2";
+import { useDeletePoMutation } from "../../../redux/uniformService/PoServices.js";
 
 export default function Form() {
   const [showForm, setShowForm] = useState(false);
@@ -31,42 +34,41 @@ export default function Form() {
     setShowForm(true);
     setReadOnly(false);
   };
-
-  // const handleDelete = async (id) => {
-  //   setId(id);
-  //   const { data } = await trigger(id);
-  //   if (id) {
-  //     if (!window.confirm("Are you sure to delete...?")) {
-  //       return;
-  //     }
-  //     try {
-  //       let deldata = await removeData(id).unwrap();
-  //       if (deldata?.statusCode == 1) {
-  //         Swal.fire({
-  //           icon: "error",
-  //           title: "Child record Exists",
-  //           text: deldata.data?.message || "Data cannot be deleted!",
-  //         });
-  //         return;
-  //       }
-  //       setId("");
-  //       Swal.fire({
-  //         title: "Deleted Successfully",
-  //         icon: "success",
-  //         timer: 1000,
-  //       });
-  //       setShowForm(false);
-  //       dispatch(StyleMasterApi.util.invalidateTags(["StyleMaster"]));
-  //     } catch (error) {
-  //       Swal.fire({
-  //         icon: "error",
-  //         title: "Submission error",
-  //         text: error.data?.message || "Something went wrong!",
-  //       });
-  //       setShowForm(false);
-  //     }
-  //   }
-  // };
+  const [removeData] = useDeletePoMutation();
+  const handleDelete = async (id) => {
+    setId(id);
+    if (id) {
+      if (!window.confirm("Are you sure to delete...?")) {
+        return;
+      }
+      try {
+        let deldata = await removeData(id).unwrap();
+        if (deldata?.statusCode == 1) {
+          Swal.fire({
+            icon: "error",
+            title: "Child record Exists",
+            text: deldata.data?.message || "Data cannot be deleted!",
+          });
+          return;
+        }
+        setId("");
+        Swal.fire({
+          title: "Deleted Successfully",
+          icon: "success",
+          timer: 1000,
+        });
+        setShowForm(false);
+        // dispatch(StyleMasterApi.util.invalidateTags(["StyleMaster"]));
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Submission error",
+          text: error.data?.message || "Something went wrong!",
+        });
+        setShowForm(false);
+      }
+    }
+  };
 
   const onNew = () => {
     setId("");
@@ -108,15 +110,15 @@ export default function Form() {
           </div>
         </div>
 
-        {/* <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <PurchaseInwardFormReport
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <PurchaseOrderFormReport
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
             itemsPerPage={10}
-            searchStyleId={searchStyleId}
+          // searchStyleId={searchStyleId}
           />
-        </div> */}
+        </div>
       </div>
 
       {showForm && (

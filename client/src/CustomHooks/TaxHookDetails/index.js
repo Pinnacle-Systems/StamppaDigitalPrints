@@ -1,154 +1,188 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from "react";
 
-import { substract as s } from '../../Utils/helper';
-import { useGetTaxTemplateByIdQuery } from '../../redux/services/TaxTemplateServices';
-import { useGetTaxTermMasterQuery } from '../../redux/services/TaxTermMasterServices';
+import { substract as s } from "../../Utils/helper";
+import { useGetTaxTemplateByIdQuery } from "../../redux/services/TaxTemplateServices";
+import { useGetTaxTermMasterQuery } from "../../redux/services/TaxTermMasterServices";
 
+const useTaxDetailsHook = ({
+  poItems,
+  taxTypeId,
+  isSupplierOutside = false,
+  discountType: overAllDiscountType,
+  discountValue: overAllDiscountValue,
+}) => {
+  const substract = s;
+  const [formulas, setFormulas] = useState([]);
 
-const useTaxDetailsHook = ({ poItems, taxTypeId, isSupplierOutside = false, discountType: overAllDiscountType, discountValue: overAllDiscountValue }) => {
-    const substract = s;
-    const [formulas, setFormulas] = useState([])
+  console.log(poItems, "poItems");
 
-    console.log(poItems, "poItems")
+  const { data, isLoading, isFetching } = useGetTaxTemplateByIdQuery(
+    taxTypeId,
+    { skip: !taxTypeId },
+  );
 
-    const { data, isLoading, isFetching } = useGetTaxTemplateByIdQuery(taxTypeId, { skip: !taxTypeId })
+  const {
+    data: taxTermMaster,
+    isLoading: isTemplateTermLoading,
+    isFetching: isTemplateTermFetching,
+  } = useGetTaxTermMasterQuery(taxTypeId, { skip: !taxTypeId });
 
-    const { data: taxTermMaster, isLoading: isTemplateTermLoading, isFetching: isTemplateTermFetching } = useGetTaxTermMasterQuery(taxTypeId, { skip: !taxTypeId })
+  function getRegex(formula) {
+    if (!formula) return formula;
+    let input = formula;
+    const words = formula.match(/\{(.*?)\}/g);
+    if (!words) return formula;
+    words.forEach((element) => {
+      input = input.replace(element, getFormula(element.slice(1, -1)));
+    });
+    return getRegex(input);
+  }
 
-    function getRegex(formula) {
-        if (!formula) return formula
-        let input = formula;
-        const words = formula.match(/\{(.*?)\}/g)
-        if (!words) return formula
-        words.forEach(element => {
-            input = input.replace(element, getFormula(element.slice(1, -1)))
-        });
-        return getRegex(input)
+  function getFormula(constant) {
+    const split = constant.split("_");
+    let name = split[0];
+    let value = split[1];
+    let formula = formulas.find((f) => f.name === name);
+    return formula ? formula[value.toLowerCase()] : "";
+  }
+  useEffect(() => {
+    if (data) {
+      setFormulas(
+        data.data.TaxTemplateDetails.map((f) => {
+          return {
+            name: getName(f.taxTermId),
+            isPowise: getIsPoItem(f?.taxTermId),
+            displayName: f.displayName,
+            value: f.value,
+            amount: f.amount,
+          };
+        }),
+      );
     }
+  }, [
+    isLoading,
+    isFetching,
+    isTemplateTermFetching,
+    isTemplateTermLoading,
+    taxTypeId,
+  ]);
 
+  if (!taxTypeId) return { data: null };
+  function getName(id) {
+    if (!taxTermMaster) return "";
+    let data = taxTermMaster.data.find((t) => parseInt(t.id) === parseInt(id));
+    if (!data) return "";
+    return data.name;
+  }
 
+  function getFormulaByName(formulaName) {
+    let formula = formulas.find((f) => f.name === formulaName);
+    return formula ? formula : "";
+  }
 
-    function getFormula(constant) {
-        const split = constant.split("_");
-        let name = split[0];
-        let value = split[1];
-        let formula = formulas.find(f => f.name === name)
-        return formula ? formula[value.toLowerCase()] : ""
-    }
-    useEffect(() => {
-        if (data) {
-            setFormulas(data.data.TaxTemplateDetails.map(f => { return { name: (getName(f.taxTermId)), isPowise: getIsPoItem(f?.taxTermId), displayName: f.displayName, value: f.value, amount: f.amount } }))
-        }
+  function getIsPoItem(id) {
+    if (!taxTermMaster) return false;
+    let data = taxTermMaster.data.find((t) => parseInt(t.id) === parseInt(id));
+    if (!data) return false;
+    return data.isPoWise;
+  }
 
-    }, [isLoading, isFetching, isTemplateTermFetching, isTemplateTermLoading, taxTypeId])
+  function getTotalQuantity(taxTerm, valueOrAmount) {
+    let calculateItems = structuredClone(poItems);
+    let formula = getRegex(getFormulaByName(taxTerm)[valueOrAmount]);
 
-    if (!taxTypeId) return { data: null }
-    function getName(id) {
-        if (!taxTermMaster) return ""
-        let data = taxTermMaster.data.find(t => parseInt(t.id) === parseInt(id))
-        if (!data) return ""
-        return data.name
-    }
+    const add = (a, b) => a + b;
+    const sub = (a, b) => a - b;
+    const mul = (a, b) => a * b;
+    const div = (a, b) => (b === 0 ? 0 : a / b);
 
-    function getFormulaByName(formulaName) {
-        let formula = formulas.find(f => f.name === formulaName)
-        return formula ? formula : ''
-    }
+    const total = calculateItems.reduce((accumulator, currentItem) => {
+      let price = Number(currentItem.price) || 0;
+      let qty = Number(currentItem.qty) || 0;
+      let discountValue = Number(currentItem.discountValue) || 0;
+      let taxPercent = Number(currentItem.taxPercent) || 0;
 
-    function getIsPoItem(id) {
-        if (!taxTermMaster) return false
-        let data = taxTermMaster.data.find(t => parseInt(t.id) === parseInt(id))
-        if (!data) return false
-        return data.isPoWise
-    }
+      return accumulator + Number(eval(formula) || 0);
+    }, 0);
 
-    function getTotalQuantity(taxTerm, valueOrAmount) {
-        let calculateItems = structuredClone(poItems)
-        let formula = getRegex(getFormulaByName(taxTerm)[valueOrAmount])
+    return total;
+  } 
 
-        console.log(formula,'formulaformula')
+  console.log(getTotalQuantity, "getTotalQuantity");
 
-        const total = calculateItems?.reduce((accumulator, currentItem) => {
-            let price = isNaN(parseFloat(currentItem["price"])) ? 0 : parseFloat(currentItem["price"])
-            let qty = isNaN(parseFloat(currentItem["qty"])) ? 0 : parseFloat(currentItem["qty"])
-            let discountType = currentItem["discountType"];
-            let discountValue = isNaN(parseFloat(currentItem["discountValue"])) ? 0 : parseFloat(currentItem["discountValue"]);
-            let taxPercent = isNaN(parseFloat(currentItem["taxPercent"])) ? 0 : parseFloat(currentItem["taxPercent"])
+  // function getTotalQuantity(taxTerm, valueOrAmount) {
+  //     return poItems.reduce((acc, item) => {
+  //         const price = Number(item.price) || 0;
+  //         const qty = Number(item.qty) || 0;
+  //         const discountValue = Number(item.discountValue) || 0;
+  //         const taxPercent = Number(item.taxPercent) || 0;
 
-            console.log(accumulator,'accumulator')
-            return accumulator + eval(formula)
-        }, 0)
-        return total
-    }
+  //         const baseAmount = price * qty;
 
-    console.log(getTotalQuantity,"getTotalQuantity")
+  //         const discount =
+  //             item.discountType === "Flat"
+  //                 ? discountValue
+  //                 : (baseAmount * discountValue) / 100;
 
-    // function getTotalQuantity(taxTerm, valueOrAmount) {
-    //     return poItems.reduce((acc, item) => {
-    //         const price = Number(item.price) || 0;
-    //         const qty = Number(item.qty) || 0;
-    //         const discountValue = Number(item.discountValue) || 0;
-    //         const taxPercent = Number(item.taxPercent) || 0;
+  //         const taxableAmount = baseAmount - discount;
 
-    //         const baseAmount = price * qty;
+  //         const taxAmount = (taxableAmount * taxPercent) / 100;
 
-    //         const discount =
-    //             item.discountType === "Flat"
-    //                 ? discountValue
-    //                 : (baseAmount * discountValue) / 100;
+  //         return acc + taxableAmount + taxAmount;
+  //     }, 0);
+  // }
 
-    //         const taxableAmount = baseAmount - discount;
-
-    //         const taxAmount = (taxableAmount * taxPercent) / 100;
-
-    //         return acc + taxableAmount + taxAmount;
-    //     }, 0);
-    // }
-
-
-    if (!formulas || isFetching || isLoading) {
-        return { isLoading: isTemplateTermFetching || isTemplateTermLoading || isLoading || isFetching }
-    }
-    let sgstAmount = getTotalQuantity("SGST", "amount")
-    let grossAmount = getTotalQuantity("GROSS", "amount")
-    let netAmount = getTotalQuantity("NET", "amount")
-    let cgstAmount = getTotalQuantity("CGST", "amount")
-    let igstAmount = getTotalQuantity("IGST", "amount")
-    let sgstValue = getTotalQuantity("CGST", "value")
-    let cgstValue = getTotalQuantity("SGST", "value")
-    let igstValue = getTotalQuantity("IGST", "value")
-
-    let taxableAmount = getTotalQuantity("TAXABLE", "amount")
-
-    let discountAmount = getTotalQuantity("DISCOUNT", "amount")
-    let roundOffAmount = getTotalQuantity("ROUNDOFF", "amount");
-    let overAllDiscountAmount = getTotalQuantity("OVERALLDISCOUNT", "amount");
+  if (!formulas || isFetching || isLoading) {
     return {
-        sgstAmount, 
-        grossAmount,
-         netAmount,
-          discountAmount, 
-          cgstAmount, 
-          igstAmount, 
-          igstValue,
-        sgstValue,
-         cgstValue,
-          taxableAmount,
-           overAllDiscountAmount,
-        roundOffAmount,
-         isLoading: isTemplateTermFetching || isTemplateTermLoading || isLoading || isFetching
-    }
-}
+      isLoading:
+        isTemplateTermFetching ||
+        isTemplateTermLoading ||
+        isLoading ||
+        isFetching,
+    };
+  }
+  let sgstAmount = getTotalQuantity("SGST", "amount");
+  let grossAmount = getTotalQuantity("GROSS", "amount");
+  let netAmount = getTotalQuantity("NET", "amount");
+  let cgstAmount = getTotalQuantity("CGST", "amount");
+  let igstAmount = getTotalQuantity("IGST", "amount");
+  let sgstValue = getTotalQuantity("CGST", "value");
+  let cgstValue = getTotalQuantity("SGST", "value");
+  let igstValue = getTotalQuantity("IGST", "value");
 
-export default useTaxDetailsHook; 
+  let taxableAmount = getTotalQuantity("TAXABLE", "amount");
 
+  let discountAmount = getTotalQuantity("DISCOUNT", "amount");
+  let roundOffAmount = getTotalQuantity("ROUNDOFF", "amount");
+  let overAllDiscountAmount = getTotalQuantity("OVERALLDISCOUNT", "amount");
+  return {
+    sgstAmount,
+    grossAmount,
+    netAmount,
+    discountAmount,
+    cgstAmount,
+    igstAmount,
+    igstValue,
+    sgstValue,
+    cgstValue,
+    taxableAmount,
+    overAllDiscountAmount,
+    roundOffAmount,
+    isLoading:
+      isTemplateTermFetching ||
+      isTemplateTermLoading ||
+      isLoading ||
+      isFetching,
+  };
+};
+
+export default useTaxDetailsHook;
 
 // import React, { useEffect, useState } from 'react'
 
 // import { substract as s } from '../../Utils/helper';
 // import { useGetTaxTemplateByIdQuery } from '../../redux/services/TaxTemplateServices';
 // import { useGetTaxTermMasterQuery } from '../../redux/services/TaxTermMasterServices';
-
 
 // const useTaxDetailsHook = ({ poItems, taxTypeId, isSupplierOutside = false, discountType: overAllDiscountType, discountValue: overAllDiscountValue }) => {
 //     const substract = s;
@@ -168,8 +202,6 @@ export default useTaxDetailsHook;
 //         });
 //         return getRegex(input)
 //     }
-
-
 
 //     function getFormula(constant) {
 //         const split = constant.split("_");
@@ -245,4 +277,4 @@ export default useTaxDetailsHook;
 //     }
 // }
 
-// export default useTaxDetailsHook; 
+// export default useTaxDetailsHook;

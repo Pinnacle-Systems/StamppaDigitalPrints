@@ -27,7 +27,7 @@ const PoItems = ({
   };
   const [contextMenu, setContextMenu] = useState(null);
   const [currentSelectedIndex, setCurrentSelectedIndex] = useState(null);
-
+  const [focusedRowIndex, setFocusedRowIndex] = useState(null);
   const addRow = () => {
     const newRow = {
       styleItemId: "",
@@ -57,10 +57,7 @@ const PoItems = ({
   };
 
   const handleDeleteAllRows = () => {
-    setPoItems((prevRows) => {
-      if (prevRows.length <= 1) return prevRows;
-      return [prevRows[0]];
-    });
+    setPoItems(Array.from({ length: 5 }, () => ({ ...EMPTY_ROW })));
   };
 
   const handleRightClick = (event, rowIndex, type) => {
@@ -85,11 +82,24 @@ const PoItems = ({
   };
 
   useEffect(() => {
-    if (!poItems || poItems.length === 0) {
+    // If edit mode (id exists)
+    if (id && poItems?.length > 0) {
+      const requiredRows = 5;
+      const missingRows = requiredRows - poItems.length;
+
+      if (missingRows > 0) {
+        setPoItems([
+          ...poItems,
+          ...Array.from({ length: missingRows }, () => ({ ...EMPTY_ROW })),
+        ]);
+      }
+    }
+
+    // If create mode (no id)
+    if (!id && (!poItems || poItems.length === 0)) {
       setPoItems(Array.from({ length: 5 }, () => ({ ...EMPTY_ROW })));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [id, poItems]);
 
   return (
     <>
@@ -277,25 +287,24 @@ const PoItems = ({
                       min={"0"}
                       type="number"
                       className="text-right rounded py-1 px-1 w-full table-data-input"
-                      onFocus={(e) => e.target.select()}
-                      value={row?.price}
+                        onFocus={(e) => {
+                          setFocusedRowIndex(index);
+                          e.target.select();
+                        }}
+                       value={
+                          focusedRowIndex === index
+                            ? row?.price ?? "" // show raw value while editing
+                            : row?.price
+                            ? Number(row.price).toFixed(2) // format nicely otherwise
+                            : ""
+                        }
                       onChange={(e) =>
                         handleInputChange(e.target.value, index, "price")
                       }
                       onBlur={(e) => {
-                        const minQty = row.minQty || 0;
-                        if (parseFloat(minQty) > parseFloat(e.target.value)) {
-                          e.target.value = "";
-                          Swal.fire({
-                            icon: "warning",
-                            title: "Invalid Meter",
-                            text: `Inward Meter cannot be Less than Min Meter! - ${minQty}`,
-                            confirmButtonText: "OK",
-                          });
-                          return;
-                        }
-                        handleInputChange(e.target.value, index, "price");
-                      }}
+                          handleInputChange(e.target.value, index, "price");
+                          setFocusedRowIndex(null);
+                        }}
                       disabled={readOnly}
                     />
                   </td>
@@ -307,7 +316,7 @@ const PoItems = ({
                       value={
                         !row.qty || !row.price
                           ? 0.0
-                          : parseFloat(row.qty) * parseFloat(row.price)
+                          : (parseFloat(row.qty) * parseFloat(row.price)).toFixed(2)
                       }
                       disabled={true}
                     />
@@ -317,17 +326,17 @@ const PoItems = ({
                     <button
                       disabled={readOnly || !row?.styleItemId}
                       className="text-center rounded py-1 w-20"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            setCurrentSelectedIndex(index);
-                          }
-                        }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          setCurrentSelectedIndex(index);
+                        }
+                      }}
                       onClick={() => {
                         if (!taxTemplateId)
                           return toast.info("Please select Tax Type", {
                             position: "top-center",
                           });
-                          console.log(taxTemplateId,"taxTemplate")
+                        console.log(taxTemplateId, "taxTemplate");
                         setCurrentSelectedIndex(index);
                       }}
                     >

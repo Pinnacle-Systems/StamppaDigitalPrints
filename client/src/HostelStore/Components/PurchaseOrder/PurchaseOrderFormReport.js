@@ -1,204 +1,21 @@
-import React from 'react'
+import React from "react";
 import { useEffect, useState } from "react";
-import { useGetPartyQuery } from "../../../redux/services/PartyMasterService"
+import { useGetPartyQuery } from "../../../redux/services/PartyMasterService";
 import { Loader } from "../../../Basic/components";
-import { findFromList, getCommonParams, getDateFromDateTimeToDisplay } from "../../../Utils/helper";
-import { showEntries } from '../../../Utils/DropdownData';
-import secureLocalStorage from 'react-secure-storage';
 import {
-  useGetPoQuery
-} from "../../../redux/uniformService/PoServices"
-import { pageNumberToReactPaginateIndex, reactPaginateIndexToPageNumber } from '../../../Utils/helper';
-import ReactPaginate from 'react-paginate';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-
-
-// const PurchaseOrderFormReport = ({
-//   heading,
-//   onClick,
-// }) => {
-//   const branchId = secureLocalStorage.getItem(
-//     sessionStorage.getItem("sessionId") + "currentBranchId"
-//   )
-//   const [poNo, setPoNo] = useState("");
-//   const [searchPoDate, setPoDate] = useState("");
-//   const [searchDueDate, setDueDate] = useState("");
-//   const [searchPoType, setSearchPoType] = useState("");
-//   const [supplier, setSupplier] = useState("");
-//   const [dataPerPage, setDataPerPage] = useState("10");
-//   const [totalCount, setTotalCount] = useState(0);
-//   const [currentPageNumber, setCurrentPageNumber] = useState(1);
-//   const handleOnclick = (e) => {
-//     setCurrentPageNumber(reactPaginateIndexToPageNumber(e.selected));
-//   }
-//   const searchFields = { searchDocId: poNo, searchPoDate, searchSupplierAliasName: supplier, searchPoType, searchDueDate }
-
-//   const companyId = secureLocalStorage.getItem(
-//     sessionStorage.getItem("sessionId") + "userCompanyId"
-//   )
-
-//   const { finYearId } = getCommonParams()
-
-//   const params = {
-//     branchId, companyId
-//   };
-
-//   const { data: allData, isLoading, isFetching } = useGetPoQuery({ params: { branchId, ...searchFields, pagination: true, dataPerPage, pageNumber: currentPageNumber, finYearId } });
-// console.log(allData,"allData")
-//   const { data: supplierList } =
-//     useGetPartyQuery({ params: { ...params } });
-
-//   useEffect(() => {
-//     if (allData?.totalCount) {
-//       setTotalCount(allData?.totalCount)
-//     }
-//   }, [allData, isLoading, isFetching])
-
-
-//   const isLoadingIndicator = isLoading || isFetching
-
-
-//   return (
-//     <div className="flex flex-col w-full h-[95%] overflow-auto" >
-//       <div className="md:flex md:items-center md:justify-between page-heading p-1">
-//         <div className="heading text-center md:mx-10">{heading}</div>
-//         <div className=" sub-heading justify-center md:justify-start items-center">
-//           <label className="text-white text-sm rounded-md m-1  border-none">Show Entries</label>
-//           <select value={dataPerPage}
-//             onChange={(e) => setDataPerPage(e.target.value)} className='h-6 w-40 border border-gray-500 rounded mr-9'>
-//             {showEntries.map((option) => <option value={option.value} >{option.show}</option>)}
-//           </select>
-//         </div>
-
-//       </div>
-//       <>
-//         <div
-//           className="h-[500px] overflow-auto"
-//         >
-//           <table className="table-fixed text-center w-full">
-//             <thead className="border-2 table-header">
-//               <tr className='h-2'>
-//                 <th
-//                   className="border-2  top-0 stick-bg w-10">
-//                   S. no.
-//                 </th>
-//                 <th
-//                   className="border-2  top-0 stick-bg"
-//                 >
-//                   <label>Po.No</label><input
-//                     type="text"
-//                     className="text-black h-6 focus:outline-none border md:ml-3 border-gray-400 rounded-lg"
-//                     placeholder="Search"
-//                     value={poNo}
-//                     onChange={(e) => {
-//                       setPoNo(e.target.value);
-//                     }}
-//                   />
-//                 </th>
-//                 <th
-//                   className="border-2  top-0 stick-bg"
-//                 >
-//                   <label>Po.Date</label><input
-//                     type="text"
-//                     className="text-black h-6 focus:outline-none border md:ml-3 border-gray-400 rounded-lg"
-//                     placeholder="Search"
-//                     value={searchPoDate}
-//                     onChange={(e) => {
-//                       setPoDate(e.target.value);
-//                     }}
-//                   />
-//                 </th>
-//                 <th
-
-//                   className="border-2  top-0 stick-bg"
-//                 >
-//                   <label>Supplier</label><input
-//                     type="text"
-//                     className="text-black h-6 focus:outline-none border md:ml-3 border-gray-400 rounded-lg"
-//                     placeholder="Search"
-//                     value={supplier}
-//                     onChange={(e) => {
-//                       setSupplier(e.target.value);
-//                     }}
-//                   />
-//                 </th>
-//                 <th
-//                   className="border-2  top-0 stick-bg"
-//                 >
-//                   <label>Po Type</label><input
-//                     type="text"
-//                     className="text-black h-6 focus:outline-none border md:ml-3 border-gray-400 rounded-lg"
-//                     placeholder="Search"
-//                     value={searchPoType}
-//                     onChange={(e) => {
-//                       setSearchPoType(e.target.value);
-//                     }}
-//                   />
-//                 </th>
-
-//                 <th className="border-2  top-0 stick-bg">
-//                   <label>Due Date</label><input
-//                     type="text"
-//                     className="text-black h-6 focus:outline-none border md:ml-3 border-gray-400 rounded-lg"
-//                     placeholder="Search"
-//                     value={searchDueDate}
-//                     onChange={(e) => {
-//                       setDueDate(e.target.value);
-//                     }}
-//                   />
-//                 </th>
-
-//               </tr>
-//             </thead>
-//             {isLoadingIndicator ?
-//               <tbody>
-//                 <tr>
-//                   <td>
-//                     <Loader />
-//                   </td>
-//                 </tr>
-//               </tbody>
-//               :
-//               <tbody className="border-2">
-//                 {allData?.data?.map((dataObj, index) => (
-//                   <tr
-//                     key={dataObj.id}
-//                     className="border-2 table-row "
-//                     onClick={() => onClick(dataObj.id)}>
-//                     <td className='py-1'> {(index + 1) + (dataPerPage * (currentPageNumber - 1))}</td>
-//                     <td className='py-1'> {dataObj.docId}</td>
-//                     <td className='py-1'>{getDateFromDateTimeToDisplay(dataObj.createdAt)} </td>
-//                     <td className='py-1'>{findFromList(dataObj.supplierId, supplierList?.data, "name")}</td>
-//                     <td className='py-1'>{dataObj.transType}</td>
-//                     <td className='py-1'>{getDateFromDateTimeToDisplay(dataObj.dueDate)}</td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             }
-//           </table>
-//         </div>
-//       </>
-//       <ReactPaginate
-//         previousLabel={"<"}
-//         nextLabel={">"}
-//         breakLabel={"..."}
-//         breakClassName={"break-me"}
-//         forcePage={pageNumberToReactPaginateIndex(currentPageNumber)}
-//         pageCount={Math.ceil(totalCount / dataPerPage)}
-//         marginPagesDisplayed={1}
-//         onPageChange={handleOnclick}
-//         containerClassName={"flex justify-center m-2 gap-5 items-center"}
-//         pageClassName={"border custom-circle text-center"}
-//         disabledClassName={"p-1 bg-gray-200"}
-//         previousLinkClassName={"border p-1 text-center"}
-//         nextLinkClassName={"border p-1"}
-//         activeClassName={"bg-blue-900 text-white px-2"} />
-//     </div>
-//   )
-// }
-
-// export default PurchaseOrderFormReport
-
+  findFromList,
+  getCommonParams,
+  getDateFromDateTimeToDisplay,
+} from "../../../Utils/helper";
+import { showEntries } from "../../../Utils/DropdownData";
+import secureLocalStorage from "react-secure-storage";
+import { useGetPoQuery } from "../../../redux/uniformService/PoServices";
+import {
+  pageNumberToReactPaginateIndex,
+  reactPaginateIndexToPageNumber,
+} from "../../../Utils/helper";
+import ReactPaginate from "react-paginate";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const PurchaseOrderFormReport = ({
   onClick,
@@ -209,17 +26,16 @@ const PurchaseOrderFormReport = ({
   rowActions = true,
 }) => {
   const branchId = secureLocalStorage.getItem(
-    sessionStorage.getItem("sessionId") + "currentBranchId"
+    sessionStorage.getItem("sessionId") + "currentBranchId",
   );
-
 
   const [dataPerPage, setDataPerPage] = useState("1");
   const [serachDocNo, setSerachDocNo] = useState("");
   const [searchClientName, setSearchClientName] = useState("");
   const [searchDate, setSearchDate] = useState("");
+  const [searchDeliveryDate, setSearchDeliveryDate] = useState("");
   const [supplier, setSupplier] = useState("");
-  const [searchMaterial, setSearchMaterial] = useState("")
-
+  const [searchPoType, setSearchPoType] = useState("");
 
   const [totalCount, setTotalCount] = useState(0);
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
@@ -234,42 +50,34 @@ const PurchaseOrderFormReport = ({
     searchClientName,
     searchDate,
     supplier,
-    searchMaterial
-
+    searchPoType,
   };
 
   useEffect(() => {
     setCurrentPageNumber(1);
-  }, [
-    serachDocNo,
-    searchClientName,
-    searchDate,
-    supplier,
-    searchMaterial,
-  ]);
+  }, [serachDocNo, searchClientName, searchDate, supplier, searchPoType]);
 
   const companyId = secureLocalStorage.getItem(
-    sessionStorage.getItem("sessionId") + "userCompanyId"
+    sessionStorage.getItem("sessionId") + "userCompanyId",
   );
   const params = {
     branchId,
     companyId,
   };
 
-
-
-  const { data: allData, isFetching, isLoading } = useGetPoQuery({
+  const {
+    data: allData,
+    isFetching,
+    isLoading,
+  } = useGetPoQuery({
     params: {
       branchId,
       ...searchFields,
       pagination: true,
       dataPerPage,
       pageNumber: currentPageNumber,
-    }
+    },
   });
-
-
-
 
   useEffect(() => {
     if (allData?.totalCount) {
@@ -277,10 +85,7 @@ const PurchaseOrderFormReport = ({
     }
   }, [allData, isLoading, isFetching]);
 
-  const isLoadingIndicator =
-    isLoading || isFetching
-
-
+  const isLoadingIndicator = isLoading || isFetching;
 
   console.log(allData, "entire");
 
@@ -290,7 +95,7 @@ const PurchaseOrderFormReport = ({
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = allData?.data?.slice(indexOfFirstItem, indexOfLastItem);
 
-  console.log(indexOfLastItem, "indexOfLastItem")
+  console.log(indexOfLastItem, "indexOfLastItem");
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -303,16 +108,19 @@ const PurchaseOrderFormReport = ({
     return (
       <div className="h-10 w-full flex flex-col sm:flex-row justify-between items-center p-2 bg-white border-t border-gray-200 ">
         <div className="text-sm text-gray-600 mb-2 sm:mb-0">
-          Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, allData?.data?.length)} of {allData?.length} entries
+          Showing {indexOfFirstItem + 1} to{" "}
+          {Math.min(indexOfLastItem, allData?.data?.length)} of{" "}
+          {allData?.length} entries
         </div>
         <div className="flex gap-1">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-3 py-1 rounded-md ${currentPage === 1
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
+            className={`px-3 py-1 rounded-md ${
+              currentPage === 1
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
           >
             <FaChevronLeft className="inline" />
           </button>
@@ -333,10 +141,11 @@ const PurchaseOrderFormReport = ({
               <button
                 key={pageNum}
                 onClick={() => handlePageChange(pageNum)}
-                className={`px-3 py-1 rounded-md ${currentPage === pageNum
-                  ? 'bg-indigo-800 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === pageNum
+                    ? "bg-indigo-800 text-white"
+                    : "bg-white text-gray-600 hover:bg-gray-100"
+                }`}
               >
                 {pageNum}
               </button>
@@ -350,10 +159,11 @@ const PurchaseOrderFormReport = ({
           {totalPages > 5 && currentPage < totalPages - 2 && (
             <button
               onClick={() => handlePageChange(totalPages)}
-              className={`px-3 py-1 rounded-md ${currentPage === totalPages
-                ? 'bg-indigo-800 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
-                }`}
+              className={`px-3 py-1 rounded-md ${
+                currentPage === totalPages
+                  ? "bg-indigo-800 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
             >
               {totalPages}
             </button>
@@ -362,10 +172,11 @@ const PurchaseOrderFormReport = ({
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className={`px-3 py-1 rounded-md ${currentPage === totalPages
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
+            className={`px-3 py-1 rounded-md ${
+              currentPage === totalPages
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-white text-gray-600 hover:bg-gray-100"
+            }`}
           >
             <FaChevronRight className="inline" />
           </button>
@@ -379,7 +190,6 @@ const PurchaseOrderFormReport = ({
       //   id="registrationFormReport"
       className="flex flex-col w-full h-[78Vh] overflow-auto"
     >
-
       <>
         <div className="h-[100vh] rounded-lg bg-[#F1F1F0] shadow-sm">
           <div className="h-[68vh]">
@@ -415,6 +225,9 @@ const PurchaseOrderFormReport = ({
                                         /> */}
                   </th>
                   <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-32">
+                    <div>Delivery Date</div>
+                  </th>
+                  <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-40">
                     <div>Po Type</div>
                     {/* <input
                                             type="text"
@@ -426,19 +239,8 @@ const PurchaseOrderFormReport = ({
                                             }}
                                         /> */}
                   </th>
-                  <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-32">
-                    <div>Material</div>
-                    {/* <input
-                                            type="text"
-                                            className="text-black h-5   w-full py-1.5  px-1 focus:outline-none border  border-gray-400 rounded-lg"
-                                            placeholder="Search"
-                                            value={searchDate}
-                                            onChange={(e) => {
-                                                setSearchDate(e.target.value);
-                                            }}
-                                        /> */}
-                  </th>
-                  <th className="w-96  px-3   font-medium text-[13px] text-gray-900  text-center ">
+
+                  <th className="w-80  px-3   font-medium text-[13px] text-gray-900  text-center ">
                     <div>Supplier</div>
                     {/* <input
                                             type="text"
@@ -452,9 +254,7 @@ const PurchaseOrderFormReport = ({
                   </th>
                   <th className="w-14   px-3  font-medium text-[13px]  text-gray-900  text-center ">
                     <div>Actions</div>
-
                   </th>
-
                 </tr>
                 <tr className="">
                   <th className=" px-1  font-medium text-[13px] justify-end  text-gray-900  text-center  w-12">
@@ -488,24 +288,24 @@ const PurchaseOrderFormReport = ({
                       type="text"
                       className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
                       placeholder="Search"
-                      value={searchMaterial}
+                      value={searchDeliveryDate}
                       onChange={(e) => {
-                        setSearchMaterial(e.target.value);
+                        setSearchDeliveryDate(e.target.value);
                       }}
                     />
                   </th>
-                  <th className="  px-1 font-medium text-[13px]  text-gray-900  text-center w-32">
+                  <th className="  px-1 font-medium text-[13px]  text-gray-900  text-center w-40">
                     <input
                       type="text"
                       className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
                       placeholder="Search"
-                      value={searchMaterial}
+                      value={searchPoType}
                       onChange={(e) => {
-                        setSearchMaterial(e.target.value);
+                        setSearchPoType(e.target.value);
                       }}
                     />
                   </th>
-                  <th className="w-96  px-1 font-medium text-[13px]  text-gray-900  text-center ">
+                  <th className="w-80  px-1 font-medium text-[13px]  text-gray-900  text-center ">
                     <input
                       type="text"
                       className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
@@ -517,10 +317,7 @@ const PurchaseOrderFormReport = ({
                     />
                   </th>
 
-                  <th className="w-14  px-1  font-medium text-[13px]  text-gray-900  text-center ">
-
-                  </th>
-
+                  <th className="w-14  px-1  font-medium text-[13px]  text-gray-900  text-center "></th>
                 </tr>
               </thead>
               {isLoadingIndicator ? (
@@ -533,88 +330,112 @@ const PurchaseOrderFormReport = ({
                 </tbody>
               ) : (
                 <tbody className="border-2">
-                  {(allData?.data ? allData?.data : []).map((dataObj, index) => (
-                    <tr
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          onClick(dataObj.id);
-                        }
-                      }}
-                      tabIndex={0}
-                      key={dataObj.id}
-                      className={`hover:bg-gray-50 transition-colors border-b   border-gray-200 text-[12px] ${index % 2 === 0 ? "bg-white" : "bg-gray-100"
+                  {(allData?.data ? allData?.data : []).map(
+                    (dataObj, index) => (
+                      <tr
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            onClick(dataObj.id);
+                          }
+                        }}
+                        tabIndex={0}
+                        key={dataObj.id}
+                        className={`hover:bg-gray-50 transition-colors border-b   border-gray-200 text-[12px] ${
+                          index % 2 === 0 ? "bg-white" : "bg-gray-100"
                         }`}
-                      onClick={() => onClick(dataObj.id)}
-                    >
-                      <td className="text-center " >
-                        {index + 1}
-                      </td>
+                        onClick={() => {onClick(dataObj.id)}}
+                      >
+                        <td className="text-center ">{index + 1}</td>
 
-                      <td className="py-1.5 text-center">{dataObj.docId} </td>
+                        <td className="py-1.5 text-center">{dataObj.docId} </td>
 
-
-                      <td className="py-1.5 text-left">
-                        {getDateFromDateTimeToDisplay(dataObj.createdAt)}
-                      </td>
-                      <td className="py-1.5 text-left  ">{dataObj.poMaterial} </td>
-
-                      <td className="py-1.5 text-left  ">{dataObj.poType} </td>
-
-                      <td className="py-1.5 text-left"> {dataObj?.supplier?.name}</td>
-                      {rowActions && (
-                        <td className=" w-[30px] border-gray-200 gap-1 px-2   h-8 justify-end">
-                          <div className="flex">
-                            {onView && (
-                              <button
-                                className="text-blue-600  flex items-center   px-1  bg-blue-50 rounded"
-                                onClick={() => onView(dataObj.id)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                                </svg>
-                              </button>
-                            )}
-                            {onEdit && (
-                              <button
-                                className="text-green-600 gap-1 px-1   bg-green-50 rounded"
-                                onClick={() => onEdit(dataObj.id)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                </svg>
-                              </button>
-                            )}
-                            {onDelete && (
-                              <button
-                                className=" text-red-800 flex items-center gap-1 px-1  bg-red-50 rounded"
-                                onClick={() => onDelete(dataObj.id)}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                                {/* <span className="text-xs">delete</span> */}
-                              </button>
-                            )}
-                          </div>
+                        <td className="py-1.5 text-left">
+                          {getDateFromDateTimeToDisplay(dataObj.docDate)}
                         </td>
-                      )}
+                        <td className="py-1.5 text-left">
+                          {getDateFromDateTimeToDisplay(dataObj.dueDate)}
+                        </td>
+                        <td className="py-1.5 text-left  ">
+                          {dataObj.poType}{" "}
+                        </td>
 
-                    </tr>
-                  ))}
-
+                        <td className="py-1.5 text-left">
+                          {" "}
+                          {dataObj?.Supplier?.name}
+                        </td>
+                        {rowActions && (
+                          <td className=" w-[30px] border-gray-200 gap-1 px-2   h-8 justify-end">
+                            <div className="flex">
+                              {onView && (
+                                <button
+                                  className="text-blue-600  flex items-center   px-1  bg-blue-50 rounded"
+                                  onClick={() => onView(dataObj.id)}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                              {onEdit && (
+                                <button
+                                  className="text-green-600 gap-1 px-1   bg-green-50 rounded"
+                                  onClick={() => onEdit(dataObj.id)}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                  </svg>
+                                </button>
+                              )}
+                              {onDelete && (
+                                <button
+                                  className=" text-red-800 flex items-center gap-1 px-1  bg-red-50 rounded"
+                                  onClick={() => onDelete(dataObj.id)}
+                                >
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                  {/* <span className="text-xs">delete</span> */}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    ),
+                  )}
                 </tbody>
               )}
             </table>
-
           </div>
           <div className="h-[10vh]">
             <Pagination />
           </div>
-
         </div>
       </>
-
     </div>
   );
 };
