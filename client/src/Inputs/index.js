@@ -1,7 +1,7 @@
 import validator from "validator";
 import React, { forwardRef, useEffect, useRef, useState } from "react";
 import { MultiSelect } from "react-multi-select-component";
-import Select from "react-dropdown-select";
+import Select from "react-select";
 import { findFromList } from "../Utils/helper";
 import {
   FaChevronLeft,

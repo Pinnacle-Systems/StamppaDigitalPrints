@@ -60,20 +60,16 @@ const PurchaseOrderForm = ({
   setReadOnly,
   docId,
   setDocId,
-  poItems,
-  setPoItems,
-  tempPoItems,
-  setTempPoItems,
   onNew,
   taxTypeList,
   supplierList,
   supplierDetails,
   yarnList,
   uomList,
-  colorList,
+  styleItemList,
   termsData,
   branchList,
-  hsnData,
+  hsnList,
 }) => {
   const today = new Date();
 
@@ -85,7 +81,7 @@ const PurchaseOrderForm = ({
   const [poMaterial, setPoMaterial] = useState("DyedYarn");
   const [supplierId, setSupplierId] = useState("");
   const [term, setTerm] = useState("");
-
+  const [poItems, setPoItems] = useState([]);
   const [discountType, setDiscountType] = useState("");
   const [discountValue, setDiscountValue] = useState(0);
   const [orderId, setOrderId] = useState("");
@@ -377,7 +373,7 @@ const PurchaseOrderForm = ({
           </button>
         </div>
       </div>
-      <div className="space-y-3 h-full py-2">
+      <div className="space-y-3 py-2">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm col-span-1">
             <h2 className="font-medium text-slate-700 mb-2">Basic Details</h2>
@@ -536,7 +532,15 @@ const PurchaseOrderForm = ({
           </div>
         </div>
         <fieldset className="">
-          <PoItems />
+          <PoItems
+            poItems={poItems}
+            setPoItems={setPoItems}
+            readOnly={readOnly}
+            uomList={uomList}
+            hsnList={hsnList}
+            styleItemList={styleItemList}
+            taxTemplateId={taxTemplateId}
+          />
         </fieldset>
 
         <div className="grid grid-cols-4 gap-3">

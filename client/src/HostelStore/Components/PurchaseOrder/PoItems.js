@@ -4,6 +4,8 @@ import { CLOSE_ICON, VIEW } from "../../../icons";
 import FxSelect from "../../../Inputs";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
+import Modal from "../../../UiComponents/Modal";
+import TaxDetailsFullTemplate from "../TaxDetailsCompleteTemplate";
 
 const PoItems = ({
   id,
@@ -11,16 +13,24 @@ const PoItems = ({
   setPoItems,
   readOnly,
   params,
-  styleList,
+  styleItemList,
   uomList,
   hsnList,
-  taxTypeId
+  taxTemplateId,
 }) => {
+  const EMPTY_ROW = {
+    styleItemId: "",
+    hsnId: "",
+    uomId: "",
+    price: "",
+    qty: "",
+  };
   const [contextMenu, setContextMenu] = useState(null);
+  const [currentSelectedIndex, setCurrentSelectedIndex] = useState(null);
 
   const addRow = () => {
     const newRow = {
-      styleId: "",
+      styleItemId: "",
       hsnId: "",
       uomId: "",
       price: "",
@@ -67,39 +77,6 @@ const PoItems = ({
     setContextMenu(null);
   };
 
-  useEffect(() => {
-    if (poItems) {
-      setPoItems((prev) => {
-        const filledRows = prev.length;
-
-        if (filledRows < 4) {
-          // add empty rows until total becomes 6
-          return [
-            ...prev,
-            ...Array.from({ length: 4 - filledRows }, () => ({
-              styleId: "",
-              hsnId: "",
-              uomId: "",
-              price: "",
-              qty: "",
-            })),
-          ];
-        }
-        return prev; // if already >= 6, just keep as it is
-      });
-    } else {
-    //   setPoItems(
-    //     Array.from({ length: 4 }, () => ({
-    //       styleId: "",
-    //       hsnId: "",
-    //       uomId: "",
-    //       price: "",
-    //       qty: "",
-    //     })),
-    //   );
-    }
-  }, [poItems, setPoItems]);
-
   const deleteSelectedRows = () => {
     setPoItems((rows) =>
       rows.filter((r) => !(r.selected && (r.stockQty ?? 0) === 0)),
@@ -107,8 +84,28 @@ const PoItems = ({
     setContextMenu(null);
   };
 
+  useEffect(() => {
+    if (!poItems || poItems.length === 0) {
+      setPoItems(Array.from({ length: 5 }, () => ({ ...EMPTY_ROW })));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <>
+      <Modal
+        isOpen={Number.isInteger(currentSelectedIndex)}
+        onClose={() => setCurrentSelectedIndex("")}
+      >
+        <TaxDetailsFullTemplate
+          readOnly={readOnly}
+          taxTypeId={taxTemplateId}
+          currentIndex={currentSelectedIndex}
+          setCurrentSelectedIndex={setCurrentSelectedIndex}
+          poItems={poItems}
+          handleInputChange={handleInputChange}
+        />
+      </Modal>
       <div className="border border-slate-200 px-2 bg-white rounded-md shadow-sm max-h-[450px] overflow-auto  w-full">
         <div className="flex justify-between items-center my-2">
           <h2 className="font-medium text-slate-700">List Of Items</h2>
@@ -116,7 +113,7 @@ const PoItems = ({
         <div
           className={`w-full min-h-[200px] max-h-[250px] overflow-y-auto  my-2`}
         >
-          <table className="w-full border-collapse table-fixed">
+          <table className=" border-collapse table-fixed">
             <thead className="bg-gray-200 text-gray-800 sticky top-0 z-10">
               <tr>
                 <th
@@ -125,22 +122,22 @@ const PoItems = ({
                   S.No
                 </th>
                 <th
-                  className={`w-48 px-2 py-2 text-center font-medium text-[13px]`}
+                  className={`w-96 px-2 py-2 text-center font-medium text-[13px]`}
                 >
                   Description of Goods
                 </th>
                 <th
-                  className={`w-48 px-4 py-2 text-center font-medium text-[13px]`}
+                  className={`w-28 px-4 py-2 text-center font-medium text-[13px]`}
                 >
                   HSN/SAC
                 </th>
                 <th
-                  className={`w-36 px-4 py-2 text-center font-medium text-[13px] `}
+                  className={`w-20 px-4 py-2 text-center font-medium text-[13px] `}
                 >
                   UOM
                 </th>
                 <th
-                  className={`w-36 px-4 py-2 text-center font-medium text-[13px] `}
+                  className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
                 >
                   Quantity
                 </th>
@@ -156,18 +153,15 @@ const PoItems = ({
                   Gross
                 </th>
                 <th
-                  className={`w-24 px-1 py-2 text-center font-medium text-[13px] `}
+                  className={`w-14 px-1 py-2 text-center font-medium text-[13px] `}
                 >
                   Tax Details
                 </th>
                 <th
-                  className={`w-24 px-1 py-2 text-center font-medium text-[13px] `}
+                  className={`w-20 px-1 py-2 text-center font-medium text-[13px] `}
                 >
                   Actions
                 </th>
-                <th
-                  className={`w-16 px-3 py-2 text-center font-medium text-[13px] `}
-                ></th>
               </tr>
             </thead>
             <tbody>
@@ -179,14 +173,14 @@ const PoItems = ({
                   <td className="w-12 border border-gray-300 text-[11px]  text-center p-0.5">
                     {index + 1}
                   </td>
-                  <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-left">
+                  <td className=" text-[11px] border border-gray-300 text-left">
                     <FxSelect
-                      inputId={`styleId-input-${index}`}
-                      value={row.styleId}
+                      inputId={`styleItemId-input-${index}`}
+                      value={row.styleItemId}
                       onChange={(val) =>
-                        handleInputChange(val, index, "styleId")
+                        handleInputChange(val, index, "styleItemId")
                       }
-                      options={(styleList?.data || [])
+                      options={(styleItemList?.data || [])
                         .filter((item) => item.active)
                         .map((item) => ({
                           label: item.name,
@@ -195,11 +189,11 @@ const PoItems = ({
                       readOnly={readOnly}
                       placeholder=""
                       onBlur={() =>
-                        handleInputChange(row.styleId, index, "styleId")
+                        handleInputChange(row.styleItemId, index, "styleItemId")
                       }
                       onKeyDown={(e) => {
                         if (e.key === "Delete") {
-                          handleInputChange("", index, "styleId");
+                          handleInputChange("", index, "styleItemId");
                         }
                       }}
                     />
@@ -319,21 +313,22 @@ const PoItems = ({
                     />
                   </td>
 
-                  <td className="w-40 py-0.5 border border-gray-300 text-[11px] text-right">
+                  <td className=" py-0.5 border border-gray-300 text-[11px] text-right">
                     <button
-                      disabled={readOnly || !row?.styleId}
+                      disabled={readOnly || !row?.styleItemId}
                       className="text-center rounded py-1 w-20"
-                    //   onKeyDown={(e) => {
-                    //     if (e.key === "Enter") {
-                    //       setCurrentSelectedIndex(index);
-                    //     }
-                    //   }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            setCurrentSelectedIndex(index);
+                          }
+                        }}
                       onClick={() => {
-                        if (!taxTypeId)
+                        if (!taxTemplateId)
                           return toast.info("Please select Tax Type", {
                             position: "top-center",
                           });
-                        // setCurrentSelectedIndex(index);
+                          console.log(taxTemplateId,"taxTemplate")
+                        setCurrentSelectedIndex(index);
                       }}
                     >
                       {VIEW}
@@ -342,11 +337,11 @@ const PoItems = ({
 
                   <td className="w-2 border border-gray-300">
                     <input
-                      // onContextMenu={(e) => {
-                      //   if (!readOnly) {
-                      //     handleRightClick(e, index, "");
-                      //   }
-                      // }}
+                      onContextMenu={(e) => {
+                        if (!readOnly) {
+                          handleRightClick(e, index, "");
+                        }
+                      }}
                       className="w-full"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
@@ -364,7 +359,7 @@ const PoItems = ({
               <tr className="bg-gray-50 h-7 font-medium text-gray-800">
                 <td
                   className="text-right px-4 border border-gray-300 font-medium text-[13px] py-0.5"
-                  colSpan={8}
+                  colSpan={5}
                 >
                   Total
                 </td>
@@ -380,11 +375,10 @@ const PoItems = ({
                     0,
                   )}
                 </td>
-                <td className="border border-gray-300" colSpan={1}></td>
+                <td className="border border-gray-300" colSpan={2}></td>
               </tr>
             </tfoot>
           </table>
-         
         </div>
         {contextMenu && (
           <div

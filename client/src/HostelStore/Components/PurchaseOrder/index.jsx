@@ -5,6 +5,9 @@ import { FaPlus } from "react-icons/fa";
 import { useGetTaxTemplateQuery } from "../../../redux/services/TaxTemplateServices.js";
 import { useGetPartyQuery } from "../../../redux/services/PartyMasterService.js";
 import { useGetBranchQuery } from "../../../redux/services/BranchMasterService.js";
+import { useGetStyleItemMasterQuery } from "../../../redux/services/StyleItemMasterService.js";
+import { useGetHsnMasterQuery } from "../../../redux/services/HsnMasterServices.js";
+import { useGetUnitOfMeasurementMasterQuery } from "../../../redux/uniformService/UnitOfMeasurementServices";
 
 export default function Form() {
   const [showForm, setShowForm] = useState(false);
@@ -74,6 +77,10 @@ export default function Form() {
     useGetTaxTemplateQuery({ params: { ...params } });
   const { data: supplierList } = useGetPartyQuery({ params: { ...params } });
   const { data: branchList } = useGetBranchQuery({ params: { ...params } });
+  const { data: styleItemList } = useGetStyleItemMasterQuery({ params: { ...params } });
+  const { data: uomList } = useGetUnitOfMeasurementMasterQuery({ params });
+  const { data: hsnList } =
+    useGetHsnMasterQuery({ params });
 
   return (
     <>
@@ -126,6 +133,9 @@ export default function Form() {
           taxTypeList={taxTypeList}
           supplierList={supplierList}
           branchList={branchList}
+          uomList={uomList}
+          styleItemList={styleItemList}
+          hsnList={hsnList}
         />
       )}
     </>

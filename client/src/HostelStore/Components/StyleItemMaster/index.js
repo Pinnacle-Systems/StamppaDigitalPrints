@@ -8,7 +8,7 @@ import Modal from "../../../UiComponents/Modal";
 import { statusDropdown } from "../../../Utils/DropdownData";
 
 
-const MODEL = "Style Item Master";
+const MODEL = "Item Master";
 export default function Form() {
   const [form, setForm] = useState(false);
 
@@ -137,7 +137,7 @@ export default function Form() {
 
     if (foundItem) {
       Swal.fire({
-        text: "The Style Item Name already exists.",
+        text: "The Item Name already exists.",
         icon: "warning",
         timer: 1500,
         showConfirmButton: false,
@@ -244,7 +244,7 @@ export default function Form() {
       search: "",
     },
     {
-      header: "Style Name",
+      header: "Item Name",
       accessor: (item) => item.name,
       className: "font-medium text-gray-900  w-[200px]  py-1  px-2",
       search: "Item Name",
@@ -281,7 +281,7 @@ export default function Form() {
     <div onKeyDown={handleKeyDown} className="p-1">
       <div className="w-full flex bg-white p-1 justify-between  items-center">
         <h5 className="text-xl font-bold font-segoe text-gray-800 ">
-          Style Item Master
+          Item Master
         </h5>
         <div className="flex items-center">
           <button
@@ -291,7 +291,7 @@ export default function Form() {
             }}
             className="bg-white border  border-indigo-600 text-indigo-600 hover:bg-indigo-700 hover:text-white text-sm px-4 py-1 rounded-md shadow transition-colors duration-200 flex items-center gap-2"
           >
-            + Add New Style Item
+            + Add New Item
           </button>
         </div>
       </div>
@@ -320,9 +320,9 @@ export default function Form() {
                 <h2 className="text-lg px-2 py-0.5 font-semibold text-gray-800">
                   {id
                     ? !readOnly
-                      ? "Edit Style Item"
-                      : "Style Item Master"
-                    : "Add New Style Item"}
+                      ? "Edit Item"
+                      : "Item Master"
+                    : "Add New Item"}
                 </h2>
               </div>
               <div className="flex gap-2">
@@ -385,7 +385,7 @@ export default function Form() {
                           <div className="mb-3 w-[48%]">
                             <TextInputNew1
                               ref={countryNameRef}
-                              name="Style Item"
+                              name="Item Name"
                               type="text"
                               value={name}
                               setValue={setName}

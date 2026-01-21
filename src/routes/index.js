@@ -46,6 +46,7 @@ export { default as partyBranch } from "./partyBranch.route.js"
 export { default as branchType } from "./BranchType.route.js"
 
 export {default as openingBalance} from './openingBalance.route.js'
+export { default as po } from "./po.route.js"
 
 
 

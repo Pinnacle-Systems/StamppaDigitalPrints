@@ -77,7 +77,7 @@ const ActiveTabList = () => {
     "PURCHASE LEDGER": <PurchaseLedger />,
     "DELIVERY CHALLAN": <DeliveryChallan />,
     "STYLE MASTER": <StyleMaster />,
-    "STYLE ITEM MASTER": <StyleItemMaster />,
+    "ITEM MASTER": <StyleItemMaster />,
     "INVOICE": <DeliveryInvoice />,
     "COLOR MASTER": <ColorMaster />,
     "TAX TERM MASTER": <TaxTermMaster />,

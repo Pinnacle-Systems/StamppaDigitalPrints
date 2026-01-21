@@ -19,6 +19,7 @@ import StyleMasterApi from "./services/StyleMasterService";
 import DeliveryChallanApi from "./services/DeliveryChallanService";
 import StyleItemMasterApi from "./services/StyleItemMasterService";
 import partyBranchMasterApi from "./services/PartyBranchMasterService";
+import { PoApi, UnitOfMeasurementApi } from "./uniformService";
 
 const commonReducers = {
   openTabs,
@@ -48,7 +49,8 @@ const commonReducers = {
   taxTermMaster: TaxTermMasterApi.reducer,
   taxTemplate: TaxTemplateApi.reducer,
   [openingStockApi.reducerPath]: openingStockApi.reducer,
-
+  unitOfMeasurementMaster: UnitOfMeasurementApi.reducer,
+  po: PoApi.reducer,
 
   partyCategoryMaster: partyCategoryMasterApi.reducer,
   purchaseBill: purchaseBillApi.reducer,
@@ -85,7 +87,8 @@ partyMasterApi.middleware,
 partyCategoryMasterApi.middleware,
 purchaseBillApi.middleware,
 openingStockApi.middleware,
-
+PoApi.middleware,
+UnitOfMeasurementApi.middleware,
 stockApi.middleware,
 salesBillApi.middleware,
 purchaseReturnApi.middleware,
