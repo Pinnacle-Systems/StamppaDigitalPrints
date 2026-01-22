@@ -22,13 +22,6 @@ async function getNextDocId(branchId, shortCode, startTime, endTime) {
       id: "desc",
     },
   });
-  console.log(
-    branchId,
-    shortCode,
-    startTime,
-    endTime,
-    "branchId, shortCode, startTime, endTime",
-  );
   const branchObj = await getTableRecordWithId(branchId, "branch");
   let newDocId = `${branchObj.branchCode}${getYearShortCode(new Date())}/PO/1`;
   if (lastObject) {
@@ -982,6 +975,10 @@ async function create(body) {
       remarks,
       supplierId,
       poItems,
+      discountType,
+      discountValue,
+      taxPercent,
+      termsId,
     } = await body;
     let finYearDate = await getFinYearStartTimeEndTime(finYearId);
     const shortCode = finYearDate
@@ -1002,10 +999,10 @@ async function create(body) {
         data: {
           docId: newDocId,
           docDate: docDate ? new Date(docDate) : null,
-          branchId: parseInt(branchId),
-          createdById: parseInt(userId),
           dueDate: dueDate ? new Date(dueDate) : null,
           poType,
+          branchId: parseInt(branchId),
+          createdById: parseInt(userId),
           taxTemplateId: parseInt(taxTemplateId),
           deliveryType,
           deliveryBranchId:
@@ -1023,6 +1020,19 @@ async function create(body) {
           termsAndCondtion,
           remarks,
           supplierId: parseInt(supplierId),
+          discountType,
+          discountValue:
+            discountValue === "" || discountValue == null
+              ? null
+              : Number(discountValue),
+          taxPercent:
+            taxPercent === "" || taxPercent == null ? null : Number(taxPercent),
+          quoteVersions: {
+            create: {
+              quoteVersion: 1,
+            },
+          },
+          termsId: parseInt(termsId),
         },
       });
       await createPoItems(tx, poItems, data, userId, branchId);
@@ -1180,6 +1190,12 @@ async function update(id, body) {
     remarks,
     supplierId,
     poItems,
+    discountType,
+    discountValue,
+    taxPercent,
+    isNewVersion,
+    quoteVersion,
+    termsId,
   } = await body;
   let data;
   const dataFound = await prisma.po.findUnique({
@@ -1195,7 +1211,10 @@ async function update(id, body) {
     },
   });
   if (!dataFound) return NoRecordFound("PO");
-
+  const currentQuoteVersion = dataFound.quoteVersion ?? 1;
+  const nextQuoteVersion = isNewVersion
+    ? currentQuoteVersion + 1
+    : currentQuoteVersion;
   let removedItems = findRemovedItems(dataFound, poItems);
   let removeItemsIds = removedItems.map((item) => parseInt(item.id));
   await prisma.$transaction(async (tx) => {
@@ -1210,8 +1229,8 @@ async function update(id, body) {
       },
       data: {
         docDate: docDate ? new Date(docDate) : null,
-        branchId: parseInt(branchId),
         dueDate: dueDate ? new Date(dueDate) : null,
+        branchId: parseInt(branchId),
         poType,
         taxTemplateId: parseInt(taxTemplateId),
         deliveryType,
@@ -1231,14 +1250,32 @@ async function update(id, body) {
         remarks,
         supplierId: parseInt(supplierId),
         updatedById: parseInt(userId),
+        discountType,
+        discountValue:
+          discountValue === "" || discountValue == null
+            ? null
+            : Number(discountValue),
+        taxPercent:
+          taxPercent === "" || taxPercent == null ? null : Number(taxPercent),
+        quoteVersion: isNewVersion
+          ? currentQuoteVersion + 1
+          : parseInt(quoteVersion),
+        quoteVersions: isNewVersion
+          ? {
+              create: {
+                quoteVersion: currentQuoteVersion + 1,
+              },
+            }
+          : undefined,
+        termsId: parseInt(termsId),
       },
     });
-    await updatePoItems(tx, poItems, data, userId, branchId);
+    await updatePoItems(tx, poItems, data, userId, branchId, nextQuoteVersion);
   });
   return { statusCode: 0, data };
 }
 
-async function updatePoItems(tx, poItems, po, userId, branchId) {
+async function updatePoItems(tx, poItems, po, userId, branchId, quoteVersion) {
   const promises = poItems.map(async (itemDetails) => {
     const qty = itemDetails?.qty
       ? Math.round(parseFloat(itemDetails.qty))
@@ -1264,6 +1301,7 @@ async function updatePoItems(tx, poItems, po, userId, branchId) {
           taxPercent: itemDetails?.taxPercent
             ? parseInt(itemDetails.taxPercent)
             : null,
+          quoteVersion,
         },
       });
 
@@ -1287,6 +1325,7 @@ async function updatePoItems(tx, poItems, po, userId, branchId) {
           taxPercent: itemDetails?.taxPercent
             ? parseInt(itemDetails.taxPercent)
             : null,
+          quoteVersion,
         },
       });
 

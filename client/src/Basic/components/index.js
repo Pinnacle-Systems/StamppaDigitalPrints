@@ -18,5 +18,5 @@ export {default as ControlPanel} from "./ControlPanel";
 export {default as EmployeeMaster} from "./EmployeeMaster";
 export {default as PageGroupMaster} from './PageGroupMaster';
 export { default as Dashboard } from "./Dashboard";
-
+export {default as TermsAndCondition} from "./TermsAndConditionMaster"
 

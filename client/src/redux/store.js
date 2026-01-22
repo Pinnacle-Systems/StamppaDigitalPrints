@@ -1,25 +1,46 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { openTabs } from "./features";
 import {
-  countryMasterApi, pageMasterApi, stateMasterApi,
-  cityMasterApi, departmentMasterApi, employeeCategoryMasterApi,
-  finYearMasterApi, rolesMasterApi, employeeMasterApi, userMasterApi,
-  branchMasterApi, companyMasterApi, pageGroupMasterApi, productBrandMasterApi, productCategoryMasterApi, productMasterApi, partyMasterApi,
-  partyCategoryMasterApi, purchaseBillApi, stockApi, salesBillApi, purchaseReturnApi, salesReturnApi, uomMasterApi, openingStockApi,
+  countryMasterApi,
+  pageMasterApi,
+  stateMasterApi,
+  cityMasterApi,
+  departmentMasterApi,
+  employeeCategoryMasterApi,
+  finYearMasterApi,
+  rolesMasterApi,
+  employeeMasterApi,
+  userMasterApi,
+  branchMasterApi,
+  companyMasterApi,
+  pageGroupMasterApi,
+  productBrandMasterApi,
+  productCategoryMasterApi,
+  productMasterApi,
+  partyMasterApi,
+  partyCategoryMasterApi,
+  purchaseBillApi,
+  stockApi,
+  salesBillApi,
+  purchaseReturnApi,
+  salesReturnApi,
+  uomMasterApi,
+  openingStockApi,
   DeliveryInvoiceApi,
   ColorMasterApi,
   TaxTermMasterApi,
   TaxTemplateApi,
   HsnMasterApi,
   branchTypeMasterApi,
-  openingBalanceApi
-} from "./services"
+  openingBalanceApi,
+  t
+} from "./services";
 import paymentApi from "./services/PaymentService";
 import StyleMasterApi from "./services/StyleMasterService";
 import DeliveryChallanApi from "./services/DeliveryChallanService";
 import StyleItemMasterApi from "./services/StyleItemMasterService";
 import partyBranchMasterApi from "./services/PartyBranchMasterService";
-import { PoApi, UnitOfMeasurementApi } from "./uniformService";
+import { PoApi, UnitOfMeasurementApi,TermsAndConditionsMasterApi } from "./uniformService";
 
 const commonReducers = {
   openTabs,
@@ -51,7 +72,7 @@ const commonReducers = {
   [openingStockApi.reducerPath]: openingStockApi.reducer,
   unitOfMeasurementMaster: UnitOfMeasurementApi.reducer,
   po: PoApi.reducer,
-
+  TermsandCondtions: TermsAndConditionsMasterApi.reducer,
   partyCategoryMaster: partyCategoryMasterApi.reducer,
   purchaseBill: purchaseBillApi.reducer,
 
@@ -63,52 +84,50 @@ const commonReducers = {
   hsnMaster: HsnMasterApi.reducer,
   partyBranchMaster: partyBranchMasterApi.reducer,
   branchTypeMaster: branchTypeMasterApi.reducer,
-  [openingBalanceApi.reducerPath]:openingBalanceApi.reducer,
-
-}
-const commonMiddleware = [countryMasterApi.middleware,
-pageMasterApi.middleware,
-stateMasterApi.middleware,
-cityMasterApi.middleware,
-departmentMasterApi.middleware,
-employeeCategoryMasterApi.middleware,
-finYearMasterApi.middleware,
-rolesMasterApi.middleware,
-userMasterApi.middleware,
-employeeMasterApi.middleware,
-branchMasterApi.middleware,
-companyMasterApi.middleware,
-pageGroupMasterApi.middleware,
-productBrandMasterApi.middleware,
-productCategoryMasterApi.middleware,
-productMasterApi.middleware,
-paymentApi.middleware,
-partyMasterApi.middleware,
-partyCategoryMasterApi.middleware,
-purchaseBillApi.middleware,
-openingStockApi.middleware,
-PoApi.middleware,
-UnitOfMeasurementApi.middleware,
-stockApi.middleware,
-salesBillApi.middleware,
-purchaseReturnApi.middleware,
-salesReturnApi.middleware,
-uomMasterApi.middleware,
-StyleMasterApi.middleware,
-DeliveryChallanApi.middleware,
-StyleItemMasterApi.middleware,
-DeliveryInvoiceApi.middleware,
-ColorMasterApi.middleware,
-TaxTermMasterApi.middleware,
-TaxTemplateApi.middleware,
-HsnMasterApi.middleware,
-partyBranchMasterApi.middleware,
-branchTypeMasterApi.middleware,
-openingBalanceApi.middleware,
+  [openingBalanceApi.reducerPath]: openingBalanceApi.reducer,
+};
+const commonMiddleware = [
+  countryMasterApi.middleware,
+  TermsAndConditionsMasterApi.middleware,
+  pageMasterApi.middleware,
+  stateMasterApi.middleware,
+  cityMasterApi.middleware,
+  departmentMasterApi.middleware,
+  employeeCategoryMasterApi.middleware,
+  finYearMasterApi.middleware,
+  rolesMasterApi.middleware,
+  userMasterApi.middleware,
+  employeeMasterApi.middleware,
+  branchMasterApi.middleware,
+  companyMasterApi.middleware,
+  pageGroupMasterApi.middleware,
+  productBrandMasterApi.middleware,
+  productCategoryMasterApi.middleware,
+  productMasterApi.middleware,
+  paymentApi.middleware,
+  partyMasterApi.middleware,
+  partyCategoryMasterApi.middleware,
+  purchaseBillApi.middleware,
+  openingStockApi.middleware,
+  PoApi.middleware,
+  UnitOfMeasurementApi.middleware,
+  stockApi.middleware,
+  salesBillApi.middleware,
+  purchaseReturnApi.middleware,
+  salesReturnApi.middleware,
+  uomMasterApi.middleware,
+  StyleMasterApi.middleware,
+  DeliveryChallanApi.middleware,
+  StyleItemMasterApi.middleware,
+  DeliveryInvoiceApi.middleware,
+  ColorMasterApi.middleware,
+  TaxTermMasterApi.middleware,
+  TaxTemplateApi.middleware,
+  HsnMasterApi.middleware,
+  partyBranchMasterApi.middleware,
+  branchTypeMasterApi.middleware,
+  openingBalanceApi.middleware,
 ];
-
-
-
 
 const store = configureStore({
   reducer: {
@@ -116,7 +135,7 @@ const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false
+      serializableCheck: false,
     }).concat(commonMiddleware),
 });
 

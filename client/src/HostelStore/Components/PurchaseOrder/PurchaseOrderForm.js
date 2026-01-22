@@ -1,6 +1,7 @@
 import { FaEye, FaFileAlt } from "react-icons/fa";
 
 import {
+  CheckBox,
   DateInputNew,
   DropdownInput,
   DropdownWithSearch,
@@ -58,7 +59,6 @@ const PurchaseOrderForm = ({
   setId,
   readOnly,
   setReadOnly,
-  onNew,
   taxTypeList,
   supplierList,
   supplierDetails,
@@ -68,6 +68,7 @@ const PurchaseOrderForm = ({
   termsData,
   branchList,
   hsnList,
+  onNew,
 }) => {
   const today = new Date();
 
@@ -80,10 +81,12 @@ const PurchaseOrderForm = ({
   const [poType, setPoType] = useState("Order Purchase");
   const [poMaterial, setPoMaterial] = useState("DyedYarn");
   const [supplierId, setSupplierId] = useState("");
-  const [termsAndCondition, setTermsAndCondition] = useState("");
+  const [termsAndCondtion, setTermsAndCondtion] = useState("");
+  const [termsId, setTermsId] = useState("");
   const [poItems, setPoItems] = useState([]);
-  const [discountType, setDiscountType] = useState("");
-  const [discountValue, setDiscountValue] = useState(0);
+  const [discountType, setDiscountType] = useState("Percentage");
+  const [discountValue, setDiscountValue] = useState();
+  const [taxPercent, setTaxPercent] = useState();
   const [orderId, setOrderId] = useState("");
   const [remarks, setRemarks] = useState("");
   const [PurchaseType, setPurchaseType] = useState("General Purchase");
@@ -94,6 +97,8 @@ const PurchaseOrderForm = ({
   const [showExtraCharge, setShowExtraCharge] = useState(false);
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [tableDataView, setTableDataView] = useState(false);
+  const [isNewVersion, setIsNewVersion] = useState(false);
+  const [quoteVersion, setQuoteVersion] = useState("1");
 
   const [requirementId, setRequirementId] = useState("");
 
@@ -128,7 +133,8 @@ const PurchaseOrderForm = ({
 
       setPoItems(data?.poItems ? data?.poItems : []);
       setDocId(data?.docId ? data?.docId : "New");
-      setDiscountType(data?.discountType || "");
+      setDiscountType(data?.discountType || "Percentage");
+      setTaxPercent(data?.taxPercent ? data?.taxPercent : "");
       setDiscountValue(data?.discountValue || "0");
       setSupplierId(data?.supplierId || "");
       setDueDate(
@@ -145,9 +151,12 @@ const PurchaseOrderForm = ({
       setOrderId(data?.orderId ? data?.orderId : "");
       setRequirementId(data?.requirementId ? data?.requirementId : "");
       setTaxTemplateId(data?.taxTemplateId ? data?.taxTemplateId : "");
-      setTermsAndCondition(
-        data?.termsAndCondition ? data?.termsAndCondition : "",
+      setTermsAndCondtion(
+        data?.termsAndCondtion ? data?.termsAndCondtion : "",
       );
+      setTermsId(data?.termsId ? data?.termsId : "");
+      setIsNewVersion(false);
+      setQuoteVersion(data?.quoteVersion || 1);
     },
     [id],
   );
@@ -155,10 +164,9 @@ const PurchaseOrderForm = ({
   useEffect(() => {
     if (id && singleData?.data) {
       syncFormWithDb(singleData.data);
+    } else {
+      syncFormWithDb(undefined);
     }
-    //  else {
-    //   syncFormWithDb(undefined);
-    // }
   }, [isSingleFetching, isSingleLoading, id, syncFormWithDb, singleData]);
 
   let data = {
@@ -174,9 +182,14 @@ const PurchaseOrderForm = ({
     deliveryToId,
     discountType,
     discountValue,
+    taxPercent,
     finYearId,
     poType,
     taxTemplateId,
+    termsAndCondtion,
+    termsId,
+    isNewVersion,
+    quoteVersion,
   };
 
   const handleSubmitCustom = async (callback, data, text, nextProcess) => {
@@ -202,11 +215,10 @@ const PurchaseOrderForm = ({
             setId(0);
             setDocId("New");
             syncFormWithDb(undefined);
+            // onNew();
           }
           if (nextProcess == "close") {
             onClose();
-          } else {
-            setId(returnData?.data?.id);
           }
         } else {
           toast.error(returnData?.message);
@@ -218,7 +230,7 @@ const PurchaseOrderForm = ({
   };
 
   const validateData = (data) => {
-    let mandatoryFields = ["styleItemId", "hsnId","uomId","qty","price"];
+    let mandatoryFields = ["styleItemId", "hsnId", "uomId", "qty", "price"];
 
     return (
       data?.dueDate &&
@@ -331,6 +343,8 @@ const PurchaseOrderForm = ({
           poItems={poItems}
           taxTypeId={taxTemplateId}
           readOnly={readOnly}
+          taxPercent={taxPercent}
+          setTaxPercent={setTaxPercent}
         />
       </Modal>
       <div className="w-full  mx-auto rounded-md shadow-lg px-2 py-1 overflow-y-auto">
@@ -402,7 +416,43 @@ const PurchaseOrderForm = ({
                 required={true}
                 readOnly={readOnly}
               />
-
+              {!readOnly && id && (
+                <div className="col-span-1 mt-3">
+                  <CheckBox
+                    name="New Version"
+                    value={isNewVersion}
+                    setValue={setIsNewVersion}
+                    readOnly={readOnly}
+                    className="w-full"
+                  />
+                </div>
+              )}
+              {/* {id && (
+                <div className="col-span-1">
+                  <DropdownInput
+                    readOnly={true}
+                    name="Current Version"
+                    value={quoteVersion}
+                    setValue={(value) => setQuoteVersion(value)}
+                    options={[
+                      ...new Set(
+                        poItems
+                          .map((i) => i.quoteVersion),
+                      ),
+                    ].map((i) => ({ show: i, value: i }))}
+                  />
+                </div>
+              )} */}
+              {
+                id && (
+                   <TextInput
+                name="Current Version"
+                placeholder="Contact name"
+                value={quoteVersion}
+                disabled={true}
+              />
+                )
+              }
               <div></div>
             </div>
           </div>
@@ -527,9 +577,17 @@ const PurchaseOrderForm = ({
               </h2>
 
               <select
-                value={termsAndCondition}
+                value={termsId}
                 onChange={(e) => {
-                  setTermsAndCondition(e.target.value);
+                  const selectedId = e.target.value;
+
+                  setTermsId(selectedId);
+
+                  const selectedTerm = termsData?.data?.find(
+                    (item) => String(item.id) === String(selectedId),
+                  );
+
+                  setTermsAndCondtion(selectedTerm?.description || "");
                 }}
                 readOnly={readOnly}
                 className="text-left h-15  w-full rounded py-1 border-2 border-gray-200 text-[13px]"
@@ -540,7 +598,7 @@ const PurchaseOrderForm = ({
                   : termsData?.data?.filter((item) => item?.active)
                 )?.map((blend) => (
                   <option value={blend.id} key={blend.id}>
-                    {blend?.termsAndCondition.substring(0, 50)}
+                    {blend?.name.substring(0, 50)}
                   </option>
                 ))}
               </select>
@@ -551,13 +609,9 @@ const PurchaseOrderForm = ({
             <textarea
               disabled={readOnly}
               className="w-full h-14 overflow-auto px-2.5 py-2 text-xs border border-slate-300 rounded-md  focus:ring-1 focus:ring-indigo-200 focus:border-indigo-500"
-              value={findFromList(
-                termsAndCondition,
-                termsData?.data,
-                "termsAndCondition",
-              )}
-              onChange={(e) => setTermsAndCondition(e.target.value)}
-              placeholder="Select or type Terms & Conditions..."
+              value={termsAndCondtion}
+              onChange={(e) => setTermsAndCondtion(e.target.value)}
+              placeholder="Type Terms & Conditions..."
             />
           </div>
 
@@ -615,13 +669,13 @@ const PurchaseOrderForm = ({
               <HiOutlineRefresh className="w-4 h-4 mr-2" />
               Save & Close
             </button>
-            <button
+            {/* <button
               onClick={() => saveData("draft")}
               className="bg-indigo-500 text-white px-4 py-1 rounded-md hover:bg-indigo-600 flex items-center text-sm"
             >
               <HiOutlineRefresh className="w-4 h-4 mr-2" />
               Draft Save
-            </button>
+            </button> */}
           </div>
 
           {/* Right Buttons */}

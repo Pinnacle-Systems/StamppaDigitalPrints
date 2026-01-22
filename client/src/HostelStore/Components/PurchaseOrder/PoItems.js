@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import Modal from "../../../UiComponents/Modal";
 import TaxDetailsFullTemplate from "../TaxDetailsCompleteTemplate";
+import { useMemo } from "react";
 
 const PoItems = ({
   id,
@@ -163,7 +164,7 @@ const PoItems = ({
                   Gross
                 </th>
                 <th
-                  className={`w-14 px-1 py-2 text-center font-medium text-[13px] `}
+                  className={`w-16 px-1 py-2 text-center font-medium text-[13px] `}
                 >
                   Tax Details
                 </th>
@@ -287,24 +288,24 @@ const PoItems = ({
                       min={"0"}
                       type="number"
                       className="text-right rounded py-1 px-1 w-full table-data-input"
-                        onFocus={(e) => {
-                          setFocusedRowIndex(index);
-                          e.target.select();
-                        }}
-                       value={
-                          focusedRowIndex === index
-                            ? row?.price ?? "" // show raw value while editing
-                            : row?.price
+                      onFocus={(e) => {
+                        setFocusedRowIndex(index);
+                        e.target.select();
+                      }}
+                      value={
+                        focusedRowIndex === index
+                          ? (row?.price ?? "") // show raw value while editing
+                          : row?.price
                             ? Number(row.price).toFixed(2) // format nicely otherwise
                             : ""
-                        }
+                      }
                       onChange={(e) =>
                         handleInputChange(e.target.value, index, "price")
                       }
                       onBlur={(e) => {
-                          handleInputChange(e.target.value, index, "price");
-                          setFocusedRowIndex(null);
-                        }}
+                        handleInputChange(e.target.value, index, "price");
+                        setFocusedRowIndex(null);
+                      }}
                       disabled={readOnly}
                     />
                   </td>
@@ -316,7 +317,9 @@ const PoItems = ({
                       value={
                         !row.qty || !row.price
                           ? 0.0
-                          : (parseFloat(row.qty) * parseFloat(row.price)).toFixed(2)
+                          : (
+                              parseFloat(row.qty) * parseFloat(row.price)
+                            ).toFixed(2)
                       }
                       disabled={true}
                     />
@@ -373,16 +376,18 @@ const PoItems = ({
                   Total
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {poItems?.reduce(
-                    (sum, row) => sum + (Number(row.price) || 0),
-                    0,
-                  )}
+                  {poItems
+                    ?.reduce((sum, row) => sum + (Number(row.price) || 0), 0)
+                    .toFixed(2)}
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {poItems?.reduce(
-                    (sum, row) => sum + (Number(row.gross) || 0),
-                    0,
-                  )}
+                  {poItems
+                    ?.reduce((sum, row) => {
+                      const qty = parseFloat(row.qty) || 0;
+                      const price = parseFloat(row.price) || 0;
+                      return sum + qty * price;
+                    }, 0)
+                    .toFixed(2)}
                 </td>
                 <td className="border border-gray-300" colSpan={2}></td>
               </tr>

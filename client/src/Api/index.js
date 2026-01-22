@@ -44,6 +44,7 @@ export const BRANCH_TYPE_MASTER = "branchType"
 export const OPENING_BALANCE = "openingBalance"
 export const PO_API = "po"
 export const UNIT_OF_MEASUREMENT_API = 'uom'
+export const TERMS_CONDITIONS_API = "termsconditions"
 
 
 

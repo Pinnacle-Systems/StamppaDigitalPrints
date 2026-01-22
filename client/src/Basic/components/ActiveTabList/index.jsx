@@ -85,7 +85,8 @@ const ActiveTabList = () => {
     "HSN MASTER": <HsnMaster />,
     "BRANCH TYPE MASTER": <BranchTypeMaster />,
     "OPENING BALANCE": <OpeningBalance />,
-    "PURCHASE ORDER": <PurchaseOrder />
+    "PURCHASE ORDER": <PurchaseOrder />,
+    "TERMS & CONDTIONS MASTER": <TermsAndCondition />,
 
 
   };

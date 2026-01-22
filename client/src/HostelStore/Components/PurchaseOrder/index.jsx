@@ -11,6 +11,7 @@ import { useGetHsnMasterQuery } from "../../../redux/services/HsnMasterServices.
 import { useGetUnitOfMeasurementMasterQuery } from "../../../redux/uniformService/UnitOfMeasurementServices";
 import Swal from "sweetalert2";
 import { useDeletePoMutation } from "../../../redux/uniformService/PoServices.js";
+import { useGetTermsandCondtionsQuery } from "../../../redux/uniformService/TermsAndContionService.js";
 
 export default function Form() {
   const [showForm, setShowForm] = useState(false);
@@ -18,10 +19,14 @@ export default function Form() {
   const [readOnly, setReadOnly] = useState(false);
   // const dispatch = useDispatch();
   const { branchId, companyId, finYearId, userId } = getCommonParams()
-
   const params = {
     branchId, companyId, finYearId
   };
+  const {
+    data: termsData,
+    isLoading,
+    isFetching,
+  } = useGetTermsandCondtionsQuery({ params });
 
   const handleView = (orderId) => {
     setId(orderId);
@@ -138,6 +143,8 @@ export default function Form() {
           uomList={uomList}
           styleItemList={styleItemList}
           hsnList={hsnList}
+          termsData={termsData}
+          onNew={onNew}
         />
       )}
     </>

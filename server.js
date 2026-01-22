@@ -33,7 +33,8 @@ import {
   partyBranch,
   branchType,
   openingBalance,
-  po
+  po,
+  termsAndCondition
 } from './src/routes/index.js';
 
 import { socketMain } from './src/sockets/socket.js';
@@ -115,6 +116,7 @@ app.use("/partyBranch", partyBranch)
 app.use("/branchType", branchType)
 app.use('/openingBalance',openingBalance)
 app.use("/po",po)
+app.use("/termsconditions", termsAndCondition)
 
 
 
