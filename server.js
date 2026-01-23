@@ -34,7 +34,9 @@ import {
   branchType,
   openingBalance,
   po,
-  termsAndCondition
+  termsAndCondition,
+  payTerm,
+  location
 } from './src/routes/index.js';
 
 import { socketMain } from './src/sockets/socket.js';
@@ -117,6 +119,8 @@ app.use("/branchType", branchType)
 app.use('/openingBalance',openingBalance)
 app.use("/po",po)
 app.use("/termsconditions", termsAndCondition)
+app.use("/payTerm", payTerm);
+app.use("/location", location);
 
 
 

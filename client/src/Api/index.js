@@ -13,7 +13,7 @@ export const ROLES_API = "roles";
 export const SUBSCRIPTION_API = "subscriptions";
 export const FIN_YEAR_API = "finYear";
 export const EMPLOYEE_CATEGORY_API = "employeeCategories";
-
+export const LOCATION_API = "location";
 export const PARTY_CATEGORY_API = "partyCategories"
 export const PAYMENT_API = "payments"
 
@@ -45,6 +45,7 @@ export const OPENING_BALANCE = "openingBalance"
 export const PO_API = "po"
 export const UNIT_OF_MEASUREMENT_API = 'uom'
 export const TERMS_CONDITIONS_API = "termsconditions"
+export const PAY_TERM_API = "payTerm";
 
 
 

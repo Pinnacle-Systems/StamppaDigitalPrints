@@ -17,7 +17,7 @@ import {
 import ReactPaginate from "react-paginate";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
-const PurchaseOrderFormReport = ({
+const PurchaseInwardFormReport = ({
   onClick,
   onView,
   itemsPerPage = 10,
@@ -33,7 +33,7 @@ const PurchaseOrderFormReport = ({
   const [serachDocNo, setSerachDocNo] = useState("");
   const [searchClientName, setSearchClientName] = useState("");
   const [searchDate, setSearchDate] = useState("");
-  const [searchDueDate, setSearchDueDate] = useState("");
+  const [searchDeliveryDate, setSearchDeliveryDate] = useState("");
   const [supplier, setSupplier] = useState("");
   const [searchPoType, setSearchPoType] = useState("");
 
@@ -51,7 +51,6 @@ const PurchaseOrderFormReport = ({
     searchDate,
     supplier,
     searchPoType,
-    searchDueDate
   };
 
   useEffect(() => {
@@ -289,9 +288,9 @@ const PurchaseOrderFormReport = ({
                       type="text"
                       className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
                       placeholder="Search"
-                      value={searchDueDate}
+                      value={searchDeliveryDate}
                       onChange={(e) => {
-                        setSearchDueDate(e.target.value);
+                        setSearchDeliveryDate(e.target.value);
                       }}
                     />
                   </th>
@@ -441,4 +440,4 @@ const PurchaseOrderFormReport = ({
   );
 };
 
-export default PurchaseOrderFormReport;
+export default PurchaseInwardFormReport;

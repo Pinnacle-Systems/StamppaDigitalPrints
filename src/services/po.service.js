@@ -45,7 +45,7 @@ function manualFilterSearchData(
         ? String(getDateFromDateTime(item.dueDate)).includes(searchDueDate)
         : true) &&
       (searchPoType
-        ? item.transType.toLowerCase().includes(searchPoType.toLowerCase())
+        ? item.poType.toLowerCase().includes(searchPoType.toLowerCase())
         : true),
   );
 }
@@ -122,6 +122,7 @@ async function get(req) {
       ],
       branchId: branchId ? parseInt(branchId) : undefined,
       active: active ? Boolean(active) : undefined,
+      // poType: Boolean(searchPoType) ? { contains: searchPoType } : undefined,
       docId: Boolean(serachDocNo)
         ? {
             contains: serachDocNo,
@@ -148,9 +149,6 @@ async function get(req) {
           : undefined,
         name: Boolean(supplier) ? { contains: supplier } : undefined,
       },
-    },
-    orderBy: {
-      id: "desc",
     },
     include: {
       Supplier: {
@@ -979,6 +977,7 @@ async function create(body) {
       discountValue,
       taxPercent,
       termsId,
+      payTermId,
     } = await body;
     let finYearDate = await getFinYearStartTimeEndTime(finYearId);
     const shortCode = finYearDate
@@ -1032,7 +1031,8 @@ async function create(body) {
               quoteVersion: 1,
             },
           },
-          termsId: parseInt(termsId),
+          termsId: termsId ? parseInt(termsId) : null,
+          payTermId: parseInt(payTermId),
         },
       });
       await createPoItems(tx, poItems, data, userId, branchId);
@@ -1089,93 +1089,6 @@ function findRemovedItems(dataFound, poItems) {
   return removedItems;
 }
 
-// async function update(id, body) {
-//     const { transType, dueDate, taxTemplateId, remarks, payTermDay, poType, poMaterial,
-//         supplierId, poItems, term, deliveryType, deliveryToId, discountValue, discountType,
-//         branchId, active, userId, requirementId, orderId } = await body
-//     console.log(discountType ? true : false, "discountType")
-//     const dataFound = await prisma.po.findUnique({
-//         where: {
-//             id: parseInt(id)
-//         },
-//         include: {
-//             PoItems: true
-//         }
-//     })
-//     if (!dataFound) return NoRecordFound("po");
-//     // const isValid = await poUpdateValidator(poItems)
-
-//     // if (!isValid) return { statusCode: 1, message: "Child Record Exists" };
-
-//     const isAlreadyItemAdded = id => {
-//         let item = dataFound.PoItems.find(item => parseInt(item.id) === parseInt(id))
-//         if (!item) return false
-//         return true
-//     }
-
-//     let newPoItems = poItems.filter(item => !item?.id)
-//     let updatePoItems = poItems.filter(item => isAlreadyItemAdded(item.id))
-//     let deletedItems = dataFound.PoItems.filter(item => {
-//         return !(poItems.filter(item => item?.id).some(poItem => parseInt(poItem.id) === parseInt(item.id)))
-//     }).map(item => parseInt(item.id))
-//     let data;
-//     await prisma.$transaction(async (tx) => {
-//         data = await tx.po.update({
-//             where: {
-//                 id: parseInt(id),
-//             },
-//             data: {
-//                 transType,
-//                 // taxTemplateId: parseInt(taxTemplateId) ? parseInt(taxTemplateId) : undefined,
-//                 poMaterial: poMaterial,
-//                 poType: poType,
-//                 payTermDay: payTermDay,
-//                 dueDate: dueDate ? new Date(dueDate) : undefined,
-//                 supplierId: parseInt(supplierId),
-//                 branchId: parseInt(branchId),
-//                 active,
-//                 remarks,
-//                 updatedById: parseInt(userId),
-//                 deliveryType,
-//                 deliveryBranchId: (deliveryType === "ToSelf") ? (deliveryToId ? parseInt(deliveryToId) : undefined) : undefined,
-//                 deliveryPartyId: (deliveryType === "ToParty") ? (deliveryToId ? parseInt(deliveryToId) : undefined) : undefined,
-//                 orderId: orderId ? parseInt(orderId) : undefined,
-//                 requirementId: requirementId ? parseInt(requirementId) : undefined,
-//                 taxTemplateId: taxTemplateId ? parseInt(taxTemplateId) : undefined,
-//                 discountType: discountType ? discountType : "",
-//                 discountValue: discountValue ? parseFloat(discountValue) : undefined,
-//                 termsAndCondtion: term ? term : undefined,
-
-//                 PoItems: {
-//                     createMany: {
-//                         data: newPoItems?.map(item => getPoItemObject(poMaterial, item))
-//                     }
-//                 }
-//             }
-//         });
-//         const updatePoItemsFunc = async () => {
-//             let promises = updatePoItems.map(async (item) => {
-//                 return await tx.poItems.update({
-//                     where: {
-//                         id: parseInt(item.id)
-//                     },
-//                     data: getPoItemObject(transType, item)
-//                 })
-//             })
-//             return Promise.all(promises)
-//         }
-//         await updatePoItemsFunc()
-//         await tx.poItems.deleteMany({
-//             where: {
-//                 id: {
-//                     in: deletedItems
-//                 }
-//             }
-//         })
-//     })
-//     return { statusCode: 0, data };
-// };
-
 async function update(id, body) {
   const {
     userId,
@@ -1196,6 +1109,7 @@ async function update(id, body) {
     isNewVersion,
     quoteVersion,
     termsId,
+    payTermId,
   } = await body;
   let data;
   const dataFound = await prisma.po.findUnique({
@@ -1203,18 +1117,12 @@ async function update(id, body) {
       id: parseInt(id),
     },
     include: {
-      poItems: {
-        select: {
-          id: true,
-        },
-      },
+      poItems: true,
+      quoteVersions: true,
     },
   });
   if (!dataFound) return NoRecordFound("PO");
-  const currentQuoteVersion = dataFound.quoteVersion ?? 1;
-  const nextQuoteVersion = isNewVersion
-    ? currentQuoteVersion + 1
-    : currentQuoteVersion;
+  const currentQuoteVersion =  Math.max(...new Set(dataFound?.poItems.filter(i => i?.quoteVersion).map(i => parseInt(i.quoteVersion))));
   let removedItems = findRemovedItems(dataFound, poItems);
   let removeItemsIds = removedItems.map((item) => parseInt(item.id));
   await prisma.$transaction(async (tx) => {
@@ -1267,10 +1175,30 @@ async function update(id, body) {
               },
             }
           : undefined,
-        termsId: parseInt(termsId),
+         termsId: termsId ? parseInt(termsId) : null,
+        payTermId: parseInt(payTermId),
+        poItems: {
+          createMany: {
+            data: poItems
+              .filter((i) => i["quoteVersion"] == "New")
+              .map((temp) => {
+                let newItem = {};
+                newItem["styleItemId"] = parseInt(temp["styleItemId"]);
+                newItem["uomId"] = temp["uomId"];
+                newItem["hsnId"] = parseInt(temp["hsnId"]);
+                newItem["qty"] = parseFloat(temp["qty"]);
+                newItem["price"] = parseFloat(temp["price"]);
+                newItem["discountType"] = temp["discountType"];
+                newItem["discountValue"] = parseFloat(temp["discountValue"] || 0);
+                newItem["taxPercent"] = parseFloat(temp["taxPercent"] || 0);
+                newItem["quoteVersion"] = parseInt(currentQuoteVersion + 1);
+                return newItem;
+              }),
+          },
+        },
       },
     });
-    await updatePoItems(tx, poItems, data, userId, branchId, nextQuoteVersion);
+    // await updatePoItems(tx, poItems, data, userId, branchId, nextQuoteVersion);
   });
   return { statusCode: 0, data };
 }

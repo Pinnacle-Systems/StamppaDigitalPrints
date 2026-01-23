@@ -19,4 +19,6 @@ export {default as EmployeeMaster} from "./EmployeeMaster";
 export {default as PageGroupMaster} from './PageGroupMaster';
 export { default as Dashboard } from "./Dashboard";
 export {default as TermsAndCondition} from "./TermsAndConditionMaster"
+export { default as PayTermMaster } from "./PayTermMaster";
+export { default as LocationMaster } from "./LocationMaster";
 

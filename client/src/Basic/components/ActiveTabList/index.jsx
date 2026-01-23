@@ -4,7 +4,9 @@ import { push, remove } from "../../../redux/features/opentabs";
 import {
   CountryMaster, PageMaster, StateMaster, CityMaster,
   DepartmentMaster, EmployeeCategoryMaster, FinYearMaster, UserAndRolesMaster, PageGroupMaster,
-  AccountSettings, ControlPanel, EmployeeMaster, TermsAndCondition
+  AccountSettings, ControlPanel, EmployeeMaster, TermsAndCondition,
+  PayTermMaster,
+  LocationMaster
 } from "..";
 
 
@@ -26,7 +28,8 @@ import {
   HsnMaster,
   BranchTypeMaster,
   OpeningBalance,
-  PurchaseOrder
+  PurchaseOrder,
+  PurchaseInward
 } from "../../../HostelStore/Components";
 
 
@@ -81,21 +84,21 @@ const ActiveTabList = () => {
     "INVOICE": <DeliveryInvoice />,
     "COLOR MASTER": <ColorMaster />,
     "TAX TERM MASTER": <TaxTermMaster />,
-    "TAX TEMPLATE":<TaxTemplate/>,
+    "TAX TEMPLATE": <TaxTemplate />,
     "HSN MASTER": <HsnMaster />,
     "BRANCH TYPE MASTER": <BranchTypeMaster />,
     "OPENING BALANCE": <OpeningBalance />,
     "PURCHASE ORDER": <PurchaseOrder />,
     "TERMS & CONDTIONS MASTER": <TermsAndCondition />,
-
-
+    "PAY TERM MASTER": <PayTermMaster />,
+    "LOCATION MASTER": <LocationMaster />,
+    "PURCHASE INWARD": <PurchaseInward />
   };
   const innerWidth = window.innerWidth;
   const itemsToShow = innerWidth / 130;
 
   const currentShowingTabs = openTabs.tabs.slice(0, parseInt(itemsToShow));
   const hiddenTabs = openTabs.tabs.slice(parseInt(itemsToShow));
-  console.log(currentShowingTabs, 'currentShowingTabs');
 
   return (
     // <div className="relative ">

@@ -36,6 +36,7 @@ export { default as HsnMaster } from './HsnMaster'
 export { default as BranchTypeMaster } from './BranchTypeMaster'
 export { default as OpeningBalance } from './OpeningBalance'
 export {default as PurchaseOrder} from "./PurchaseOrder"
+export {default as PurchaseInward} from "./PurchaseInward"
 
 
 

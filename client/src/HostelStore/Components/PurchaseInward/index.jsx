@@ -1,6 +1,6 @@
 import { useState } from "react";
-import PurchaseOrderForm from "./PurchaseOrderForm.js";
-import PurchaseOrderFormReport from "./PurchaseOrderFormReport.js"
+import PurchaseInwardForm from "./PurchaseInwardForm.js";
+import PurchaseInwardFormReport from "./PurchaseInwardFormReport.js"
 import { getCommonParams } from "../../../Utils/helper.js";
 import { FaPlus } from "react-icons/fa";
 import { useGetTaxTemplateQuery } from "../../../redux/services/TaxTemplateServices.js";
@@ -12,7 +12,6 @@ import { useGetUnitOfMeasurementMasterQuery } from "../../../redux/uniformServic
 import Swal from "sweetalert2";
 import { useDeletePoMutation } from "../../../redux/uniformService/PoServices.js";
 import { useGetTermsandCondtionsQuery } from "../../../redux/uniformService/TermsAndContionService.js";
-import { useGetPaytermMasterQuery } from "../../../redux/services/payTermMasterService.js";
 
 export default function Form() {
   const [showForm, setShowForm] = useState(false);
@@ -89,7 +88,6 @@ export default function Form() {
   const { data: uomList } = useGetUnitOfMeasurementMasterQuery({ params });
   const { data: hsnList } =
     useGetHsnMasterQuery({ params });
-     const { data: payTermList } = useGetPaytermMasterQuery({ params });
 
   return (
     <>
@@ -118,7 +116,7 @@ export default function Form() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <PurchaseOrderFormReport
+          <PurchaseInwardFormReport
             onView={handleView}
             onEdit={handleEdit}
             onDelete={handleDelete}
@@ -129,7 +127,7 @@ export default function Form() {
       </div>
 
       {showForm && (
-        <PurchaseOrderForm
+        <PurchaseInwardForm
           readOnly={readOnly}
           setReadOnly={setReadOnly}
           id={id}
@@ -146,7 +144,6 @@ export default function Form() {
           styleItemList={styleItemList}
           hsnList={hsnList}
           termsData={termsData}
-          payTermList={payTermList}
           onNew={onNew}
         />
       )}

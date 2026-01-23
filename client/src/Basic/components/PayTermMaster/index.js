@@ -1,84 +1,68 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import secureLocalStorage from "react-secure-storage";
-import {
-  useAddStyleItemMasterMutation,
-  useDeleteStyleItemMasterMutation,
-  useGetStyleItemMasterByIdQuery,
-  useGetStyleItemMasterQuery,
-  useLazyGetStyleItemMasterByIdQuery,
-  useUpdateStyleItemMasterMutation,
-} from "../../../redux/services/StyleItemMasterService";
 import Swal from "sweetalert2";
+import { toast } from "react-toastify";
+import { TextInput, ToggleButton, ReusableTable } from "../../../Inputs";
 import { Check, Power } from "lucide-react";
-import {
-  DropdownInput,
-  ReusableTable,
-  TextInputNew,
-  TextInputNew1,
-  ToggleButton,
-} from "../../../Inputs";
-import Modal from "../../../UiComponents/Modal";
 import { statusDropdown } from "../../../Utils/DropdownData";
-import { dropDownListObject } from "../../../Utils/contructObject";
-import { useGetHsnMasterQuery } from "../../../redux/services/HsnMasterServices";
+import Modal from "../../../UiComponents/Modal";
+import { useAddPaytermMasterMutation, useDeletePaytermMasterMutation, useGetPaytermMasterByIdQuery, useGetPaytermMasterQuery, useUpdatePaytermMasterMutation } from "../../../redux/services/payTermMasterService";
 
-const MODEL = "Item Master";
+const MODEL = "Pay Term Master";
+
 export default function Form() {
   const [form, setForm] = useState(false);
+
+  // const [openTable, setOpenTable] = useState(false);
 
   const [readOnly, setReadOnly] = useState(false);
   const [id, setId] = useState("");
   const [name, setName] = useState("");
-  const [accessory, setAccessory] = useState(false);
-  const [active, setActive] = useState(false);
+  const [days, setdays] = useState("");
+  const [active, setActive] = useState(true);
+  const [errors, setErrors] = useState({});
   const [aliasName, setAliasName] = useState("");
-  const [hsnId, setHsnId] = useState("");
+
   const [searchValue, setSearchValue] = useState("");
   const childRecord = useRef(0);
 
   const params = {
     companyId: secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId",
+      sessionStorage.getItem("sessionId") + "userCompanyId"
     ),
   };
-  const { data: hsnList } = useGetHsnMasterQuery({ params });
-
   const {
     data: allData,
     isLoading,
     isFetching,
-  } = useGetStyleItemMasterQuery({ params, searchParams: searchValue });
-
-  console.log(allData, "datatat");
-
+  } = useGetPaytermMasterQuery({ params, searchParams: searchValue });
   const {
     data: singleData,
     isFetching: isSingleFetching,
     isLoading: isSingleLoading,
-  } = useGetStyleItemMasterByIdQuery(id, { skip: !id });
+  } = useGetPaytermMasterByIdQuery(id, { skip: !id });
 
-  const [addData] = useAddStyleItemMasterMutation();
-  const [updateData] = useUpdateStyleItemMasterMutation();
-  const [removeData] = useDeleteStyleItemMasterMutation();
+  const [addData] = useAddPaytermMasterMutation();
+  const [updateData] = useUpdatePaytermMasterMutation();
+  const [removeData] = useDeletePaytermMasterMutation();
 
   const syncFormWithDb = useCallback(
     (data) => {
       if (!id) {
         setReadOnly(false);
         setName("");
+        setdays("");
         setActive(id ? data?.active : true);
-        setAliasName(data?.aliasName ? data?.aliasName : "");
-        setHsnId(data?.hsnId ? data?.hsnId : "");
-        childRecord.current = data?.childRecord ? data?.childRecord : 0;
+        return;
       } else {
-        setName(data?.name || "");
-        setActive(id ? (data?.active ?? false) : true);
+        setReadOnly(true);
+        setName(data?.name ? data.name : "");
+        setdays(data?.days ? data.days : "");
+        setActive(id ? data?.active ?? false : true);
         setAliasName(data?.aliasName ? data?.aliasName : "");
-        setHsnId(data?.hsnId ? data?.hsnId : "");
-        childRecord.current = data?.childRecord ? data?.childRecord : 0;
       }
     },
-    [id],
+    [id]
   );
 
   useEffect(() => {
@@ -88,22 +72,22 @@ export default function Form() {
   const data = {
     id,
     name,
+    days,
     active,
-    companyId: secureLocalStorage.getItem(
-      sessionStorage.getItem("sessionId") + "userCompanyId",
-    ),
     aliasName,
-    hsnId,
+    companyId: secureLocalStorage.getItem(
+      sessionStorage.getItem("sessionId") + "userCompanyId"
+    ),
   };
 
   const validateData = (data) => {
-    if (data.name && data.hsnId) {
+    if (data.name && data.days) {
       return true;
     }
     return false;
   };
 
-  const handleSubmitCustom = async (callback, data, text, nextProcess) => {
+  const handleSubmitCustom = async (callback, data, text) => {
     try {
       let returnData;
       if (text === "Updated") {
@@ -122,43 +106,13 @@ export default function Form() {
           Swal.showLoading();
         },
       });
-      console.log(nextProcess, "nextProcess");
-      if (nextProcess == "new") {
-        syncFormWithDb(undefined);
-        onNew();
-      } else {
-        setForm(false);
-      }
+      setForm(false);
     } catch (error) {
       console.log("handle");
     }
   };
 
-  const saveData = (nextProcess) => {
-    let foundItem;
-    if (id) {
-      foundItem = allData?.data
-        ?.filter((i) => i.id !== id)
-        ?.some(
-          (item) =>
-            item.name?.trim().toLowerCase() === name?.trim().toLowerCase(),
-        );
-    } else {
-      foundItem = allData?.data?.some(
-        (item) =>
-          item.name?.trim().toLowerCase() === name?.trim().toLowerCase(),
-      );
-    }
-
-    if (foundItem) {
-      Swal.fire({
-        text: "The Item Name already exists.",
-        icon: "warning",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-      return false;
-    }
+  const saveData = () => {
     if (!validateData(data)) {
       Swal.fire({
         title: "Please fill all required fields...!",
@@ -171,55 +125,41 @@ export default function Form() {
       return;
     }
     if (id) {
-      handleSubmitCustom(updateData, data, "Updated", nextProcess);
+      handleSubmitCustom(updateData, data, "Updated");
     } else {
-      handleSubmitCustom(addData, data, "Added", nextProcess);
+      handleSubmitCustom(addData, data, "Added");
     }
   };
 
-  const handleDelete = async (id, childRecord) => {
-    if (childRecord) {
-      Swal.fire({
-        icon: "error",
-        title: "Child record Exists",
-      });
-      return;
-    }
+  const handleDelete = async () => {
     if (id) {
       if (!window.confirm("Are you sure to delete...?")) {
         return;
       }
-      if (data?.data?.childRecord > 0) {
-        Swal.fire({
-          icon: "error",
-          title: "Child record Exists",
-          text: "Data cannot be deleted!",
-        });
-      } else {
-        try {
-          let deldata = await removeData(id).unwrap();
-          if (deldata?.statusCode == 1) {
-            Swal.fire({
-              icon: "error",
-              title: deldata?.message || "Data cannot be deleted!",
-            });
-            return;
-          }
-          setId("");
-          Swal.fire({
-            title: "Deleted Successfully",
-            icon: "success",
-            timer: 1000,
-          });
-          setForm(false);
-        } catch (error) {
+      try {
+        let deldata = await removeData(id).unwrap();
+        if (deldata?.statusCode == 1) {
           Swal.fire({
             icon: "error",
-            title: "Submission error",
-            text: error.data?.message || "Something went wrong!",
+            title: "Child record Exists",
+            text: deldata.data?.message || "Data cannot be deleted!",
           });
-          setForm(false);
+          return;
         }
+        setId("");
+        Swal.fire({
+          title: "Deleted Successfully",
+          icon: "success",
+          timer: 1000,
+        });
+        setForm(false);
+      } catch (error) {
+        Swal.fire({
+          icon: "error",
+          title: "Submission error",
+          text: error.data?.message || "Something went wrong!",
+        });
+        setForm(false);
       }
     }
   };
@@ -259,10 +199,16 @@ export default function Form() {
       search: "",
     },
     {
-      header: "Item Name",
+      header: "Days",
+      accessor: (item) => item.days,
+      className: "font-medium text-gray-900  w-[150px]  py-1  px-2",
+      search: "SKU",
+    },
+    {
+      header: "Name",
       accessor: (item) => item.name,
-      className: "font-medium text-gray-900  w-[400px]  py-1  px-2",
-      search: "Item Name",
+      className: "font-medium text-gray-900 w-[250px]  py-1  px-2",
+      search: "Name",
     },
     {
       header: "Status",
@@ -284,19 +230,11 @@ export default function Form() {
     setReadOnly(false);
   };
 
-  const countryNameRef = useRef(null);
-
-  useEffect(() => {
-    if (form && countryNameRef.current) {
-      countryNameRef.current.focus();
-    }
-  }, [form]);
-
   return (
     <div onKeyDown={handleKeyDown} className="p-1">
       <div className="w-full flex bg-white p-1 justify-between  items-center">
         <h5 className="text-xl font-bold font-segoe text-gray-800 ">
-          Item Master
+          Pay Term Master
         </h5>
         <div className="flex items-center">
           <button
@@ -304,9 +242,9 @@ export default function Form() {
               setForm(true);
               onNew();
             }}
-            className="bg-white border  border-indigo-600 text-indigo-600 hover:bg-indigo-700 hover:text-white text-sm px-4 py-1 rounded-md shadow transition-colors duration-200 flex items-center gap-2"
+            className="bg-white border font-segoe border-green-600 text-green-600 hover:bg-green-700 hover:text-white text-sm px-2  rounded-md shadow transition-colors duration-200 flex items-center gap-2"
           >
-            + Add New Item
+            + Add New Pay Term
           </button>
         </div>
       </div>
@@ -324,20 +262,21 @@ export default function Form() {
         <Modal
           isOpen={form}
           form={form}
-          widthClass={"w-[600px] max-w-6xl h-[380px]"}
+          widthClass={"w-[750px] max-w-6xl h-[400px]"}
           onClose={() => {
             setForm(false);
+            setErrors({});
           }}
         >
-          <div className="h-full flex flex-col bg-gray-200">
+          <div className="h-full flex flex-col bg-gray-100">
             <div className="border-b py-2 px-4 mt-4 mx-3 flex justify-between items-center sticky top-0 z-10 bg-white">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg px-2 py-0.5 font-semibold text-gray-800">
                   {id
                     ? !readOnly
-                      ? "Edit Item"
-                      : "Item Master"
-                    : "Add New Item"}
+                      ? "Edit Pay Term  "
+                      : "Pay Term Master"
+                    : "Add New  Pay Term"}
                 </h2>
               </div>
               <div className="flex gap-2">
@@ -346,13 +285,11 @@ export default function Form() {
                     <button
                       type="button"
                       onClick={() => {
-                        setForm(false);
-                        setSearchValue("");
-                        setId(false);
+                        setReadOnly(false);
                       }}
                       className="px-3 py-1 text-red-600 hover:bg-red-600 hover:text-white border border-red-600 text-xs rounded"
                     >
-                      Cancel
+                      Edit
                     </button>
                   )}
                 </div>
@@ -360,29 +297,12 @@ export default function Form() {
                   {!readOnly && (
                     <button
                       type="button"
-                      onClick={() => {
-                        saveData("close");
-                      }}
-                      className="px-3 py-1 hover:bg-blue-600 hover:text-white rounded text-blue-600 
-                  border border-blue-600 flex items-center gap-1 text-xs"
-                    >
-                      <Check size={14} />
-                      {id ? "Update" : "Save & close"}
-                    </button>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {!readOnly && !id && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        saveData("new");
-                      }}
+                      onClick={saveData}
                       className="px-3 py-1 hover:bg-green-600 hover:text-white rounded text-green-600 
-                  border border-green-600 flex items-center gap-1 text-xs"
+                                        border border-green-600 flex items-center gap-1 text-xs"
                     >
                       <Check size={14} />
-                      {"Save & New"}
+                      {id ? "Update" : "Save"}
                     </button>
                   )}
                 </div>
@@ -395,11 +315,22 @@ export default function Form() {
                   <div className="bg-white p-3 rounded-md border border-gray-200 h-full">
                     <fieldset className=" rounded mt-2">
                       <div className="">
-                        <div className="flex flex-wrap justify-between">
-                          <div className="mb-3 w-[48%]">
-                            <TextInputNew1
-                              ref={countryNameRef}
-                              name="Item Name"
+                        <div className="grid grid-cols-3 gap-x-5 ">
+                          <div className="mb-3">
+                            <TextInput
+                              name="Days"
+                              width={"w-[200px]"}
+                              type="number"
+                              value={days}
+                              setValue={setdays}
+                              readOnly={readOnly}
+                              disabled={childRecord.current > 0}
+                            />
+                          </div>
+                          <div className="mb-3 ">
+                            <TextInput
+                              name="Pay Term"
+                              width={"w-[200px]"}
                               type="text"
                               value={name}
                               setValue={setName}
@@ -408,33 +339,20 @@ export default function Form() {
                               disabled={childRecord.current > 0}
                             />
                           </div>
-                          <div className="mb-3 w-[48%]">
-                            <DropdownInput
-                              name="HSN"
-                              options={dropDownListObject(
-                                hsnList ? hsnList?.data : [],
-                                "name",
-                                "id",
-                              )}
-                              value={hsnId}
-                              setValue={(value) => {
-                                setHsnId(value);
-                              }}
-                              required={true}
+
+                          <div className="mb-3 ">
+                            <TextInput
+                              name="AliasName"
+                              width={"w-[200px]"}
+                              type="text"
+                              value={aliasName}
+                              setValue={setAliasName}
                               readOnly={readOnly}
+                              disabled={childRecord.current > 0}
                             />
                           </div>
                         </div>
-                        <div className="mb-3 w-[48%]">
-                          <TextInputNew1
-                            name="Alias Name"
-                            type="text"
-                            value={aliasName}
-                            setValue={setAliasName}
-                            readOnly={readOnly}
-                            disabled={childRecord.current > 0}
-                          />
-                        </div>
+
                         <div className="mb-5">
                           <ToggleButton
                             name="Status"

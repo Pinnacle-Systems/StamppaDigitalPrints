@@ -47,6 +47,7 @@ export { default as branchType } from "./BranchType.route.js"
 
 export {default as openingBalance} from './openingBalance.route.js'
 export { default as po } from "./po.route.js"
+export { default as payTerm } from "./payTerm.route.js";
 
 
 

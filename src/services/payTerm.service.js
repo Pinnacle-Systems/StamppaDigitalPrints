@@ -5,48 +5,30 @@ const prisma = new PrismaClient();
 
 async function get(req) {
   const { companyId, active } = req.query;
-
-  let data = await prisma.styleItem.findMany({
+  const data = await prisma.payTerm.findMany({
     where: {
+      companyId: companyId ? parseInt(companyId) : undefined,
       active: active ? Boolean(active) : undefined,
     },
-    include: {
-      _count: {
-        select: {
-          DeliveryChallanItems: true,
-        },
-      },
-    },
   });
-  return {
-    statusCode: 0,
-    data: (data = data.map((color) => ({
-      ...color,
-      childRecord: color?._count.DeliveryChallanItems > 0,
-    }))),
-  };
+  return { statusCode: 0, data };
 }
 
 async function getOne(id) {
-  const childRecord = await prisma.deliveryChallanItems.count({
-    where: { styleId: parseInt(id) },
-  });
-  const data = await prisma.styleItem.findUnique({
+  const childRecord = 0;
+  const data = await prisma.payTerm.findUnique({
     where: {
       id: parseInt(id),
     },
-    include: {
-      Hsn: true,
-    },
   });
-  if (!data) return NoRecordFound("styleItem");
+  if (!data) return NoRecordFound("payTerm");
   return { statusCode: 0, data: { ...data, ...{ childRecord } } };
 }
 
 async function getSearch(req) {
   const { searchKey } = req.params;
   const { companyId, active } = req.query;
-  const data = await prisma.styleItem.findMany({
+  const data = await prisma.payTerm.findMany({
     where: {
       companyId: companyId ? parseInt(companyId) : undefined,
       active: active ? Boolean(active) : undefined,
@@ -63,45 +45,44 @@ async function getSearch(req) {
 }
 
 async function create(body) {
-  const { name, aliasName, active, code, hsnId } = await body;
-  const data = await prisma.styleItem.create({
+  const { name, days, companyId, active, aliasName } = await body;
+  const data = await prisma.payTerm.create({
     data: {
       name,
-      aliasName,
+      days: days ? parseInt(days) : undefined,
+      companyId: parseInt(companyId),
       active,
-      code,
-      hsnId: parseInt(hsnId),
+      aliasName,
     },
   });
   return { statusCode: 0, data };
 }
 
 async function update(id, body) {
-  const { name, active, aliasName, code, hsnId } = await body;
-
-  const dataFound = await prisma.styleItem.findUnique({
+  const { name, days, companyId, active, aliasName } = await body;
+  const dataFound = await prisma.payTerm.findUnique({
     where: {
       id: parseInt(id),
     },
   });
-  if (!dataFound) return NoRecordFound("styleItem");
-  const data = await prisma.styleItem.update({
+  if (!dataFound) return NoRecordFound("payTerm");
+  const data = await prisma.payTerm.update({
     where: {
       id: parseInt(id),
     },
     data: {
       name,
-      aliasName,
+      days: days ? parseInt(days) : undefined,
+      companyId: companyId ?  parseInt(companyId) : undefined,
       active,
-      code,
-      hsnId: parseInt(hsnId),
+      aliasName: aliasName ? aliasName : undefined,
     },
   });
   return { statusCode: 0, data };
 }
 
 async function remove(id) {
-  const data = await prisma.styleItem.delete({
+  const data = await prisma.payTerm.delete({
     where: {
       id: parseInt(id),
     },

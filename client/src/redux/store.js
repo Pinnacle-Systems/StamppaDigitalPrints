@@ -33,14 +33,20 @@ import {
   HsnMasterApi,
   branchTypeMasterApi,
   openingBalanceApi,
-  t
+  t,
+  PaytermMasterApi,
+  LocationMasterApi,
 } from "./services";
 import paymentApi from "./services/PaymentService";
 import StyleMasterApi from "./services/StyleMasterService";
 import DeliveryChallanApi from "./services/DeliveryChallanService";
 import StyleItemMasterApi from "./services/StyleItemMasterService";
 import partyBranchMasterApi from "./services/PartyBranchMasterService";
-import { PoApi, UnitOfMeasurementApi,TermsAndConditionsMasterApi } from "./uniformService";
+import {
+  PoApi,
+  UnitOfMeasurementApi,
+  TermsAndConditionsMasterApi,
+} from "./uniformService";
 
 const commonReducers = {
   openTabs,
@@ -75,7 +81,7 @@ const commonReducers = {
   TermsandCondtions: TermsAndConditionsMasterApi.reducer,
   partyCategoryMaster: partyCategoryMasterApi.reducer,
   purchaseBill: purchaseBillApi.reducer,
-
+  paytermMaster: PaytermMasterApi.reducer,
   stock: stockApi.reducer,
   salesBill: salesBillApi.reducer,
   purchaseReturn: purchaseReturnApi.reducer,
@@ -85,6 +91,7 @@ const commonReducers = {
   partyBranchMaster: partyBranchMasterApi.reducer,
   branchTypeMaster: branchTypeMasterApi.reducer,
   [openingBalanceApi.reducerPath]: openingBalanceApi.reducer,
+  locationMaster: LocationMasterApi.reducer,
 };
 const commonMiddleware = [
   countryMasterApi.middleware,
@@ -127,6 +134,8 @@ const commonMiddleware = [
   partyBranchMasterApi.middleware,
   branchTypeMasterApi.middleware,
   openingBalanceApi.middleware,
+  PaytermMasterApi.middleware,
+  LocationMasterApi.middleware,
 ];
 
 const store = configureStore({

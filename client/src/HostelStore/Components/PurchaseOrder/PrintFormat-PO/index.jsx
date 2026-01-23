@@ -539,14 +539,12 @@ import {
   Font,
   StyleSheet,
 } from "@react-pdf/renderer";
-import Sangeethatex from "../../../../../src/assets/Sangeethatex.png";
+// import Sangeethatex from "../../../../../src/assets/Sangeethatex.png";
 import tw from "../../../../Utils/tailwind-react-pdf";
 import numberToText from "number-to-text";
 import { findFromList, getCommonParams, getDateFromDateTimeToDisplay } from "../../../../Utils/helper";
 import { useGetBranchByIdQuery } from "../../../../redux/services/BranchMasterService";
 import { useGetPartyByIdQuery } from "../../../../redux/services/PartyMasterService";
-import { useGetPaytermMasterQuery } from "../../../../redux/services/PayTermMasterServices";
-import { useGetTermsAndConditionsQuery } from "../../../../redux/services/TermsAndConditionsService";
 import TaxDetails from "./TaxDetails";
 import { Loader } from "../../../../Basic/components";
 
@@ -757,7 +755,7 @@ const styles = StyleSheet.create({
     flexShrink: 1, // helps long text wrap properly
   },
 });
-const YarnPurchaseOrderPrintFormat = ({
+const PurchaseOrderPrintFormat = ({
   isTaxHookDetailsLoading,
   poNumber,
   poDate,
@@ -849,7 +847,7 @@ const YarnPurchaseOrderPrintFormat = ({
               </Text>
             </View>
 
-            <Image src={Sangeethatex} style={styles.logo} />
+            {/* <Image src={Sangeethatex} style={styles.logo} /> */}
           </View>
 
           <View >
@@ -1260,5 +1258,5 @@ const YarnPurchaseOrderPrintFormat = ({
   );
 };
 
-export default YarnPurchaseOrderPrintFormat;
+export default PurchaseOrderPrintFormat;
 

@@ -45,15 +45,14 @@ import tw from "../../../Utils/tailwind-react-pdf";
 import Modal from "../../../UiComponents/Modal";
 import { Loader } from "../../../Basic/components";
 import { dropDownListObject } from "../../../Utils/contructObject";
-import PoSummary from "./PoSummary";
 import {
   useGetBranchByIdQuery,
   useGetBranchQuery,
 } from "../../../redux/services/BranchMasterService";
 import { groupBy } from "lodash";
-import PoItems from "./PoItems";
-import PurchaseOrderPrintFormat from "./PrintFormat-PO";
-const PurchaseOrderForm = ({
+import InwardItems from "./InwardItems";
+// import PurchaseOrderPrintFormat from "./PrintFormat-PO";
+const PurchaseInwardForm = ({
   onClose,
   id,
   setId,
@@ -67,7 +66,6 @@ const PurchaseOrderForm = ({
   termsData,
   branchList,
   hsnList,
-  payTermList,
   onNew,
 }) => {
   const today = new Date();
@@ -158,7 +156,6 @@ const PurchaseOrderForm = ({
       setTermsId(data?.termsId ? data?.termsId : "");
       setIsNewVersion(false);
       setQuoteVersion(data?.quoteVersion || 1);
-      setPayTermId(data?.payTermId ? data?.payTermId : "");
     },
     [id],
   );
@@ -192,7 +189,6 @@ const PurchaseOrderForm = ({
     termsId,
     isNewVersion,
     quoteVersion,
-    payTermId,
   };
 
   const handleSubmitCustom = async (callback, data, text, nextProcess) => {
@@ -237,11 +233,7 @@ const PurchaseOrderForm = ({
     const duplicates = [];
 
     items.forEach((row, index) => {
-      const key = [
-        row.styleItemId || "",
-        row.hsnId || "",
-        row.quoteVersion || "",
-      ].join("-");
+      const key = [row.styleItemId || "", row.hsnId || ""].join("-");
 
       if (seen.has(key)) {
         duplicates.push({
@@ -386,43 +378,8 @@ const PurchaseOrderForm = ({
     return false;
   }
 
-  const quoteVersionOptions = [
-    ...new Set(
-      poItems
-        .filter((i) => i?.quoteVersion !== "New")
-        .map((i) => Number(i.quoteVersion)),
-    ),
-  ].sort((a, b) => a - b);
-
   return (
     <>
-      <Modal
-        isOpen={summary}
-        onClose={() => setSummary(false)}
-        widthClass={"p-10"}
-      >
-        <PoSummary
-          remarks={remarks}
-          setRemarks={setRemarks}
-          discountType={discountType}
-          setDiscountType={setDiscountType}
-          discountValue={discountValue}
-          setDiscountValue={setDiscountValue}
-          poItems={poItems}
-          taxTypeId={taxTemplateId}
-          readOnly={readOnly}
-          isSupplierOutside={isSupplierOutside()}
-        />
-      </Modal>
-      <Modal
-        isOpen={printModalOpen}
-        onClose={() => setPrintModalOpen(false)}
-        widthClass={"w-[90%] h-[90%]"}
-      >
-        <PDFViewer style={tw("w-full h-full")}>
-          <PurchaseOrderPrintFormat singleData={singleData?.data} />
-        </PDFViewer>
-      </Modal>
       <div className="w-full  mx-auto rounded-md shadow-lg px-2 py-1 overflow-y-auto">
         <div className="flex justify-between items-center">
           <h1 className="text-lg font-bold text-gray-800">Purchase Order</h1>
@@ -452,29 +409,14 @@ const PurchaseOrderForm = ({
                 readOnly={true}
                 disabled
               />
-              <DropdownInput
-                name="Pay Term"
-                options={dropDownListObject(
-                  payTermList ? payTermList?.data : [],
-                  "name",
-                  "id",
-                )}
-                value={payTermId}
-                setValue={(val) => {
-                  setPayTermId(val);
-                }}
-                required={false}
-                readOnly={readOnly}
-                autoFocus={true}
-              />
               <DateInputNew
                 name="Delivery Date"
                 value={dueDate}
                 setValue={setDueDate}
                 type={"date"}
                 required={true}
-                // ref={dateRef}
-                // nextRef={inputPartyRef}
+                ref={dateRef}
+                nextRef={inputPartyRef}
                 readOnly={readOnly}
               />
             </div>
@@ -535,16 +477,11 @@ const PurchaseOrderForm = ({
                 </div>
               )} */}
               {id && (
-                <DropdownInput
-                  readOnly={readOnly}
+                <TextInput
                   name="Current Version"
+                  placeholder="Contact name"
                   value={quoteVersion}
-                  setValue={(value) => setQuoteVersion(value)}
-                  options={quoteVersionOptions.map((i) => ({
-                    show: i,
-                    value: i,
-                  }))}
-                  className="w-full"
+                  disabled={true}
                 />
               )}
               <div></div>
@@ -651,7 +588,7 @@ const PurchaseOrderForm = ({
           </div>
         </div>
         <fieldset className="">
-          <PoItems
+          <InwardItems
             id={id}
             poItems={poItems}
             setPoItems={setPoItems}
@@ -660,8 +597,6 @@ const PurchaseOrderForm = ({
             hsnList={hsnList}
             styleItemList={styleItemList}
             taxTemplateId={taxTemplateId}
-            isNewVersion={isNewVersion}
-            quoteVersion={quoteVersion}
           />
         </fieldset>
 
@@ -795,7 +730,7 @@ const PurchaseOrderForm = ({
               <FaEye className="w-4 h-4 mr-2" />
               Preview
             </button> */}
-            <button
+            {/* <button
               className="bg-slate-600 text-white px-4 py-1 rounded-md hover:bg-slate-700 flex items-center text-sm"
               onClick={() => {
                 // handlePrint()
@@ -804,11 +739,11 @@ const PurchaseOrderForm = ({
             >
               <FiPrinter className="w-4 h-4 mr-2" />
               Print
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
     </>
   );
 };
-export default PurchaseOrderForm;
+export default PurchaseInwardForm;

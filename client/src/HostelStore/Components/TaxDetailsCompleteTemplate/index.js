@@ -12,6 +12,8 @@ const TaxDetailsFullTemplate = ({
   readOnly,
   handleInputChange,
   taxTypeId,
+  id,
+  isNewVersion
 }) => {
   const substract = s;
   const [formulas, setFormulas] = useState([]);
@@ -157,7 +159,7 @@ const TaxDetailsFullTemplate = ({
               <input
                 type="text"
                 autoFocus
-                disabled={readOnly}
+               disabled={true}
                 className="h-7 w-full text-right"
                 value={taxPercent}
                 onChange={(e) => {
@@ -170,12 +172,13 @@ const TaxDetailsFullTemplate = ({
             <td className="border border-gray-500">Discount Type</td>
             <td className="border border-gray-500" colSpan={2}>
               <select
-                disabled={readOnly}
+               disabled={id ? !isNewVersion : readOnly}
                 className="text-left w-full rounded h-8"
                 value={discountType}
                 onChange={(e) =>
                   handleInputChange(e.target.value, index, "discountType")
                 }
+                autoFocus={true}
               >
                 <option hidden>Select</option>
                 {discountTypes.map((option, index) => (
@@ -191,7 +194,7 @@ const TaxDetailsFullTemplate = ({
             <td className="border border-gray-500" colSpan={2}>
               <input
                 type="text"
-                disabled={readOnly}
+               disabled={id ? !isNewVersion : readOnly}
                 className="h-7 w-full text-right"
                 value={discountValue}
                 onChange={(e) =>
