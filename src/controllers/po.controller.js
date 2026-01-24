@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 
-import { get as _get, getOne as _getOne, getSearch as _getSearch, getPoItems as _getPoItems, create as _create, update as _update, remove as _remove, getPoItemById as _getPoItemById } from '../services/po.service.js';
+import { get as _get, getOne as _getOne, getSearch as _getSearch, getPoItems as _getPoItems, create as _create, update as _update, remove as _remove } from '../services/po.service.js';
 
 async function get(req, res, next) {
     res.json(await _get(req));
@@ -20,26 +20,16 @@ async function getOne(req, res, next) {
     }
 }
 
-export async function getPoItemById(req, res, next) {
-        console.log(req.params,"getPoItemById")
+// export async function getPoItemById(req, res, next) {
+//         console.log(req.params,"getPoItemById")
 
-    try {
-        res.json(await _getPoItemById(req.params.id, req.params.purchaseInwardReturnId, req.params.stockId, req.params.storeId, req.params.billEntryId, req.params.poType));
-        console.log(res.statusCode);
-    } catch (err) {
-        console.error(`Error`, err.message);
-    }
-}
-
-export async function getPoItems(req, res, next) {
-    console.log("getPoItems ")
-    try {
-        res.json(await _getPoItems(req));
-        console.log(res.statusCode);
-    } catch (err) {
-        console.error(`Error`, err.message);
-    }
-}
+//     try {
+//         res.json(await _getPoItemById(req.params.id, req.params.purchaseInwardReturnId, req.params.stockId, req.params.storeId, req.params.billEntryId, req.params.poType));
+//         console.log(res.statusCode);
+//     } catch (err) {
+//         console.error(`Error`, err.message);
+//     }
+// }
 
 async function getSearch(req, res, next) {
     try {
@@ -104,11 +94,21 @@ async function remove(req, res, next) {
     }
 }
 
+async function getPoItems(req, res, next) {
+    try {
+        res.json(await _getPoItems(req));
+    } catch (err) {
+        console.error(`Error`, err.message);
+    }
+}
+
+
 export {
     get,
     getOne,
     getSearch,
     create,
     update,
-    remove
+    remove,
+    getPoItems
 };

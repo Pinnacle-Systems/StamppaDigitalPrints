@@ -76,6 +76,7 @@ const PoSummary = ({
                 value={discountType}
                 className="w-full h-8"
                 onChange={(e) => setDiscountType(e.target.value)}
+                autoFocus={true}
               >
                 {discountTypes.map((d, i) => (
                   <option key={i} value={d.value}>

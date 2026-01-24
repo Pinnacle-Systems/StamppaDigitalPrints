@@ -166,7 +166,7 @@ async function get(req) {
       Store: {
         storeName: searchStore ? { contains: searchStore } : undefined,
       },
-      Supplier: {
+      supplier: {
         name: searchSupplier ? { contains: searchSupplier } : undefined,
       },
     },
@@ -178,7 +178,7 @@ async function get(req) {
         },
       },
       inwardItems: true,
-      Supplier: {
+      supplier: {
         select: {
           id: true,
           name: true,
@@ -223,7 +223,7 @@ async function getOne(id) {
           branchName: true,
         },
       },
-      Supplier: {
+      supplier: {
         select: {
           name: true,
         },
@@ -232,148 +232,148 @@ async function getOne(id) {
     },
   });
   if (!data) return NoRecordFound("Purchase Inward");
-  const itemWithStkQty = await Promise.all(
-    data.fabricInwardItems.map(async (item) => {
-      const childRecordPlan = await prisma.cuttingOrderItems.count({
-        where: {
-          styleId: item.styleId,
-          sizeId: item.sizeId,
-          colorId: item.colorId,
-          fabricId: item.fabricId,
-          portionId: item.portionId,
-        },
-      });
-      const childRecordDelivery = await prisma.cuttingDeliveryItems.count({
-        where: {
-          styleId: item.styleId,
-          sizeId: item.sizeId,
-          colorId: item.colorId,
-          fabricId: item.fabricId,
-          portionId: item.portionId,
-        },
-      });
-      const childRecordReturn = await prisma.purchaseReturnItems.count({
-        where: {
-          styleId: item.styleId,
-          sizeId: item.sizeId,
-          colorId: item.colorId,
-          styleItemId: item.styleItemId,
-          fabricId: item.fabricId,
-          portionId: item.portionId,
-          accessoryGroupId: item.accessoryGroupId,
-          accessoryId: item.accessoryId,
-        },
-      });
-      const minDelivery = await prisma.cuttingDeliveryItems.aggregate({
-        where: {
-          styleId: item.styleId,
-          fabricId: item.fabricId,
-          portionId: item.portionId,
-        },
-        _sum: {
-          usedMeter: true,
-        },
-      });
-      const minReturn = await prisma.purchaseReturnItems.aggregate({
-        where: {
-          styleId: item.styleId,
-          fabricId: item.fabricId,
-          portionId: item.portionId,
-        },
-        _sum: {
-          returnFabMeter: true,
-        },
-      });
-      return {
-        ...item,
-        stockQty:
-          childRecordPlan + childRecordDelivery + childRecordReturn || 0,
-        minQty:
-          (minDelivery._sum.usedMeter || 0) +
-          (minReturn._sum.returnFabMeter || 0),
-      };
-    }),
-  );
-  const goodsWithStkQty = await Promise.all(
-    data.readyGoods.map(async (item) => {
-      const childRecordSales = await prisma.salesEntryItems.count({
-        where: {
-          styleId: item.styleId,
-          sizeId: item.sizeId,
-          colorId: item.colorId,
-          fabricId: item.fabricId,
-          styleItemId: item.styleItemId,
-        },
-      });
-      const childRecordAdjustment = await prisma.stockAdjustmentItems.count({
-        where: {
-          styleId: item.styleId,
-          sizeId: item.sizeId,
-          colorId: item.colorId,
-          fabricId: item.fabricId,
-          styleItemId: item.styleItemId,
-        },
-      });
-      const childRecordReturn = await prisma.returnGoods.count({
-        where: {
-          styleId: item.styleId,
-          sizeId: item.sizeId,
-          colorId: item.colorId,
-          styleItemId: item.styleItemId,
-          fabricId: item.fabricId,
-        },
-      });
-      const minDelivery = await prisma.salesEntryItems.aggregate({
-        where: {
-          styleId: item.styleId,
-          fabricId: item.fabricId,
-          colorId: item.colorId,
-          sizeId: item.sizeId,
-          styleItemId: item.styleItemId,
-        },
-        _sum: {
-          qty: true,
-        },
-      });
-      const minReturn = await prisma.returnGoods.aggregate({
-        where: {
-          styleId: item.styleId,
-          fabricId: item.fabricId,
-          colorId: item.colorId,
-          sizeId: item.sizeId,
-          styleItemId: item.styleItemId,
-        },
-        _sum: {
-          returnQty: true,
-        },
-      });
-      const minAdjust = await prisma.stockAdjustmentItems.aggregate({
-        where: {
-          styleId: item.styleId,
-          fabricId: item.fabricId,
-          colorId: item.colorId,
-          sizeId: item.sizeId,
-          styleItemId: item.styleItemId,
-        },
-        _sum: {
-          adjQty: true,
-        },
-      });
-      return {
-        ...item,
-        usedQty:
-          childRecordSales + childRecordAdjustment + childRecordReturn || 0,
-        minQty:
-          (minDelivery._sum.qty || 0) +
-          (minReturn._sum.returnQty || 0) +
-          (minAdjust._sum.adjQty || 0),
-      };
-    }),
-  );
+  // const itemWithStkQty = await Promise.all(
+  //   data.fabricInwardItems.map(async (item) => {
+  //     const childRecordPlan = await prisma.cuttingOrderItems.count({
+  //       where: {
+  //         styleId: item.styleId,
+  //         uomId: item.uomId,
+  //         hsnId: item.hsnId,
+  //         fabricId: item.fabricId,
+  //         portionId: item.portionId,
+  //       },
+  //     });
+  //     const childRecordDelivery = await prisma.cuttingDeliveryItems.count({
+  //       where: {
+  //         styleId: item.styleId,
+  //         uomId: item.uomId,
+  //         hsnId: item.hsnId,
+  //         fabricId: item.fabricId,
+  //         portionId: item.portionId,
+  //       },
+  //     });
+  //     const childRecordReturn = await prisma.purchaseReturnItems.count({
+  //       where: {
+  //         styleId: item.styleId,
+  //         uomId: item.uomId,
+  //         hsnId: item.hsnId,
+  //         styleItemId: item.styleItemId,
+  //         fabricId: item.fabricId,
+  //         portionId: item.portionId,
+  //         accessoryGroupId: item.accessoryGroupId,
+  //         accessoryId: item.accessoryId,
+  //       },
+  //     });
+  //     const minDelivery = await prisma.cuttingDeliveryItems.aggregate({
+  //       where: {
+  //         styleId: item.styleId,
+  //         fabricId: item.fabricId,
+  //         portionId: item.portionId,
+  //       },
+  //       _sum: {
+  //         usedMeter: true,
+  //       },
+  //     });
+  //     const minReturn = await prisma.purchaseReturnItems.aggregate({
+  //       where: {
+  //         styleId: item.styleId,
+  //         fabricId: item.fabricId,
+  //         portionId: item.portionId,
+  //       },
+  //       _sum: {
+  //         returnFabMeter: true,
+  //       },
+  //     });
+  //     return {
+  //       ...item,
+  //       stockQty:
+  //         childRecordPlan + childRecordDelivery + childRecordReturn || 0,
+  //       minQty:
+  //         (minDelivery._sum.usedMeter || 0) +
+  //         (minReturn._sum.returnFabMeter || 0),
+  //     };
+  //   }),
+  // );
+  // const goodsWithStkQty = await Promise.all(
+  //   data.inwardItems.map(async (item) => {
+  //     const childRecordSales = await prisma.salesEntryItems.count({
+  //       where: {
+  //         styleId: item.styleId,
+  //         uomId: item.uomId,
+  //         hsnId: item.hsnId,
+  //         fabricId: item.fabricId,
+  //         styleItemId: item.styleItemId,
+  //       },
+  //     });
+  //     const childRecordAdjustment = await prisma.stockAdjustmentItems.count({
+  //       where: {
+  //         styleId: item.styleId,
+  //         uomId: item.uomId,
+  //         hsnId: item.hsnId,
+  //         fabricId: item.fabricId,
+  //         styleItemId: item.styleItemId,
+  //       },
+  //     });
+  //     const childRecordReturn = await prisma.returnGoods.count({
+  //       where: {
+  //         styleId: item.styleId,
+  //         uomId: item.uomId,
+  //         hsnId: item.hsnId,
+  //         styleItemId: item.styleItemId,
+  //         fabricId: item.fabricId,
+  //       },
+  //     });
+  //     const minDelivery = await prisma.salesEntryItems.aggregate({
+  //       where: {
+  //         styleId: item.styleId,
+  //         fabricId: item.fabricId,
+  //         hsnId: item.hsnId,
+  //         uomId: item.uomId,
+  //         styleItemId: item.styleItemId,
+  //       },
+  //       _sum: {
+  //         qty: true,
+  //       },
+  //     });
+  //     const minReturn = await prisma.returnGoods.aggregate({
+  //       where: {
+  //         styleId: item.styleId,
+  //         fabricId: item.fabricId,
+  //         hsnId: item.hsnId,
+  //         uomId: item.uomId,
+  //         styleItemId: item.styleItemId,
+  //       },
+  //       _sum: {
+  //         returnQty: true,
+  //       },
+  //     });
+  //     const minAdjust = await prisma.stockAdjustmentItems.aggregate({
+  //       where: {
+  //         styleId: item.styleId,
+  //         fabricId: item.fabricId,
+  //         hsnId: item.hsnId,
+  //         uomId: item.uomId,
+  //         styleItemId: item.styleItemId,
+  //       },
+  //       _sum: {
+  //         adjQty: true,
+  //       },
+  //     });
+  //     return {
+  //       ...item,
+  //       usedQty:
+  //         childRecordSales + childRecordAdjustment + childRecordReturn || 0,
+  //       minQty:
+  //         (minDelivery._sum.qty || 0) +
+  //         (minReturn._sum.returnQty || 0) +
+  //         (minAdjust._sum.adjQty || 0),
+  //     };
+  //   }),
+  // );
   //   const styleIds = data.fabricInwardItems
   //     .map((item) => item.styleId)
   //     .filter(Boolean);
-  //   const goodsStyleIds = data.readyGoods
+  //   const goodsStyleIds = data.inwardItems
   //     .map((item) => item.styleId)
   //     .filter(Boolean);
   //   const accessoryIds = data.fabricInwardItems
@@ -449,6 +449,7 @@ async function create(req) {
     inwardItems,
     finYearId,
     draftSave,
+    locationId,
   } = await req.body;
   let finYearDate = await getFinYearStartTimeEndTime(finYearId);
   const shortCode = finYearDate
@@ -479,65 +480,65 @@ async function create(req) {
         dcDate: dcDate ? new Date(dcDate) : null,
         remarks,
         vehicleNo,
+        locationId: parseInt(locationId),
       },
     });
+    await createInwardItems(
+      tx,
+      inwardItems,
+      data,
+      userId,
+      locationId,
+      storeId,
+      inwardType,
+    );
   });
   return { statusCode: 0, data };
 }
 
-async function createReadyGoods(
+async function createInwardItems(
   tx,
-  readyGoods,
+  inwardItems,
   purchaseInward,
   userId,
-  branchId,
+  locationId,
   storeId,
-  invNo,
-  newDocId,
+  inwardType,
 ) {
-  const promises = JSON.parse(readyGoods).map(async (stockDetail, index) => {
-    const qty = stockDetail?.qty
-      ? Math.round(parseFloat(stockDetail.qty))
-      : null;
-    const createdItem = await tx.readyGoods.create({
+  const promises = inwardItems?.map(async (stockDetail, index) => {
+    const createdItem = await tx.inwardItems.create({
       data: {
         purchaseInwardId: parseInt(purchaseInward.id),
-        styleNo: stockDetail?.styleNo ?? undefined,
-        fabricId: stockDetail?.fabricId ? parseInt(stockDetail.fabricId) : null,
-        styleId: stockDetail?.styleId ? parseInt(stockDetail.styleId) : null,
         styleItemId: stockDetail?.styleItemId
           ? parseInt(stockDetail.styleItemId)
           : null,
-        sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-        colorId: stockDetail?.colorId ? parseInt(stockDetail.colorId) : null,
-        qty,
-        invNo: invNo ? invNo : "",
+        uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+        hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+        poQty: stockDetail?.poQty ? parseInt(stockDetail.poQty) : null,
+        inwardQty: stockDetail?.inwardQty
+          ? parseInt(stockDetail.inwardQty)
+          : null,
+        inwardType: inwardType ? inwardType : "",
+        poId: stockDetail?.poId ? parseInt(stockDetail.poId) : null,
       },
     });
-    if (newDocId !== "Draft Save") {
-      // Create corresponding Stock row
-      await tx.stock.create({
-        data: {
-          inOrOut: "PurchaseGoods",
-          createdById: parseInt(userId),
-          branchId: parseInt(branchId),
-          storeId: parseInt(storeId),
-          styleId: stockDetail?.styleId ? parseInt(stockDetail.styleId) : null,
-          sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-          colorId: stockDetail?.colorId ? parseInt(stockDetail.colorId) : null,
-          fabricId: stockDetail?.fabricId
-            ? parseInt(stockDetail.fabricId)
-            : null,
-          qty,
-          readyGoodsId: createdItem.id,
-          styleNo: stockDetail?.styleNo ?? undefined,
-          styleItemId: stockDetail?.styleItemId
-            ? parseInt(stockDetail.styleItemId)
-            : null,
-        },
-      });
-    }
-
+    await tx.stock.create({
+      data: {
+        inOrOut: "In",
+        processName: "Purchase Inward",
+        createdById: parseInt(userId),
+        branchId: parseInt(locationId),
+        storeId: parseInt(storeId),
+        inwardItemsId: createdItem.id,
+        styleItemId: stockDetail?.styleItemId
+          ? parseInt(stockDetail.styleItemId)
+          : null,
+        uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+        hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+        qty: stockDetail?.inwardQty ? parseInt(stockDetail.inwardQty) : null,
+        inwardType: inwardType ? inwardType : "",
+      },
+    });
     return createdItem;
   });
 
@@ -555,9 +556,9 @@ function findRemovedItems(dataFound, fabricInwardItems) {
   return removedItems;
 }
 
-function findRemovedItemsGoods(dataFound, readyGoods) {
-  let removedItems = dataFound.readyGoods.filter((oldItem) => {
-    let result = JSON.parse(readyGoods).find(
+function findRemovedItemsGoods(dataFound, inwardItems) {
+  let removedItems = dataFound.inwardItems.filter((oldItem) => {
+    let result = inwardItems.find(
       (newItem) => parseInt(newItem.id) === parseInt(oldItem.id),
     );
     if (result) return false;
@@ -579,9 +580,7 @@ async function update(id, body) {
     dcDate,
     remarks,
     vehicleNo,
-    fabricInwardItems,
-    readyGoods,
-    invNo,
+    inwardItems,
     finYearId,
   } = await body;
   let data;
@@ -590,12 +589,7 @@ async function update(id, body) {
       id: parseInt(id),
     },
     include: {
-      fabricInwardItems: {
-        select: {
-          id: true,
-        },
-      },
-      readyGoods: {
+      inwardItems: {
         select: {
           id: true,
         },
@@ -603,41 +597,11 @@ async function update(id, body) {
     },
   });
   if (!dataFound) return NoRecordFound("Purchase Inward");
-  if (dataFound.docId === "Draft Save") {
-    let finYearDate = await getFinYearStartTimeEndTime(finYearId);
-    const shortCode = finYearDate
-      ? getYearShortCodeForFinYear(
-          finYearDate?.startDateStartTime,
-          finYearDate?.endDateEndTime,
-        )
-      : "";
-    let newDocId = await getNextDocId(
-      branchId,
-      shortCode,
-      finYearDate?.startDateStartTime,
-      finYearDate?.endDateEndTime,
-    );
-    await prisma.purchaseInward.update({
-      where: {
-        id: parseInt(id),
-      },
-      data: {
-        docId: newDocId,
-      },
-    });
-  }
-  let removedItems = findRemovedItems(dataFound, fabricInwardItems);
-  let removeItemsIds = removedItems.map((item) => parseInt(item.id));
-  let removedItemsGoods = findRemovedItemsGoods(dataFound, readyGoods);
+  let removedItemsGoods = findRemovedItemsGoods(dataFound, inwardItems);
   let removeItemsGoodsIds = removedItemsGoods.map((item) => parseInt(item.id));
   await prisma.$transaction(async (tx) => {
-    if (removeItemsIds.length > 0) {
-      await tx.fabricInwardItems.deleteMany({
-        where: { id: { in: removeItemsIds } },
-      });
-    }
     if (removeItemsGoodsIds.length > 0) {
-      await tx.readyGoods.deleteMany({
+      await tx.inwardItems.deleteMany({
         where: { id: { in: removeItemsGoodsIds } },
       });
     }
@@ -657,418 +621,93 @@ async function update(id, body) {
         dcDate: dcDate ? new Date(dcDate) : null,
         remarks,
         vehicleNo,
-        invNo,
+        locationId: parseInt(locationId),
       },
     });
-    if (inwardType === "Finished Goods") {
-      await updateReadyGoods(
-        tx,
-        readyGoods,
-        data,
-        userId,
-        branchId,
-        storeId,
-        invNo,
-      );
-    } else {
-      await updateFabricInwardItems(
-        tx,
-        fabricInwardItems,
-        data,
-        userId,
-        branchId,
-        storeId,
-        inwardType,
-        invNo,
-      );
-    }
+    await updateinwardItems(
+      tx,
+      inwardItems,
+      data,
+      userId,
+      locationId,
+      storeId,
+      inwardType,
+    );
   });
   return { statusCode: 0, data };
 }
 
-async function updateFabricInwardItems(
+async function updateinwardItems(
   tx,
-  fabricInwardItems,
-  fabricInward,
-  userId,
-  branchId,
-  storeId,
-  inwardType,
-  invNo,
-) {
-  const promises = JSON.parse(fabricInwardItems).map(async (inwardDetails) => {
-    if (inwardDetails.id) {
-      // Update existing FabricInwardItem
-      const updatedItem = await tx.fabricInwardItems.update({
-        where: { id: parseInt(inwardDetails.id) },
-
-        data: {
-          purchaseInwardId: parseInt(fabricInward.id),
-          styleNo: inwardDetails?.styleNo ?? undefined,
-          fabricId: inwardDetails?.fabricId
-            ? parseInt(inwardDetails.fabricId)
-            : null,
-          styleItemId: inwardDetails?.styleItemId
-            ? parseInt(inwardDetails.styleItemId)
-            : null,
-          styleId: inwardDetails?.styleId
-            ? parseInt(inwardDetails.styleId)
-            : null,
-          colorId: inwardDetails?.colorId
-            ? parseInt(inwardDetails.colorId)
-            : null,
-          fabWidth: inwardDetails?.fabWidth
-            ? parseFloat(inwardDetails.fabWidth)
-            : null,
-          fabMeter: inwardDetails?.fabMeter
-            ? parseFloat(inwardDetails.fabMeter)
-            : null,
-          noOfPcs: inwardDetails?.noOfPcs
-            ? parseInt(inwardDetails.noOfPcs)
-            : null,
-          accessoryId: inwardDetails?.accessoryId
-            ? parseInt(inwardDetails.accessoryId)
-            : null,
-          accessoryGroupId: inwardDetails?.accessoryGroupId
-            ? parseInt(inwardDetails.accessoryGroupId)
-            : null,
-          sizeId: inwardDetails?.sizeId ? parseInt(inwardDetails.sizeId) : null,
-          qty: inwardDetails?.qty ? parseFloat(inwardDetails.qty) : 0,
-          uomId: inwardDetails?.uomId ? parseInt(inwardDetails.uomId) : null,
-          price: inwardDetails?.price ? parseInt(inwardDetails.price) : null,
-          filePath: inwardDetails?.filePath
-            ? inwardDetails?.filePath
-            : undefined,
-          invNo: invNo ? invNo : undefined,
-          portionId: inwardDetails?.portionId
-            ? parseInt(inwardDetails.portionId)
-            : null,
-        },
-      });
-
-      // Update or create Stock row
-      const existingStock = await tx.materialStock.findFirst({
-        where: { fabricInwardItemsId: updatedItem.id },
-      });
-
-      if (existingStock) {
-        await tx.materialStock.update({
-          where: { id: existingStock.id },
-          data: {
-            updatedById: parseInt(userId),
-            branchId: parseInt(branchId),
-            storeId: parseInt(storeId),
-            styleNo: inwardDetails?.styleNo ?? undefined,
-            fabricId: inwardDetails?.fabricId
-              ? parseInt(inwardDetails.fabricId)
-              : null,
-            styleItemId: inwardDetails?.styleItemId
-              ? parseInt(inwardDetails.styleItemId)
-              : null,
-            styleId: inwardDetails?.styleId
-              ? parseInt(inwardDetails.styleId)
-              : null,
-            colorId: inwardDetails?.colorId
-              ? parseInt(inwardDetails.colorId)
-              : null,
-            fabWidth: inwardDetails?.fabWidth
-              ? parseFloat(inwardDetails.fabWidth)
-              : null,
-            fabMeter: inwardDetails?.fabMeter
-              ? parseFloat(inwardDetails.fabMeter)
-              : null,
-            noOfPcs: inwardDetails?.noOfPcs
-              ? parseInt(inwardDetails.noOfPcs)
-              : null,
-            accessoryId: inwardDetails?.accessoryId
-              ? parseInt(inwardDetails.accessoryId)
-              : null,
-            accessoryGroupId: inwardDetails?.accessoryGroupId
-              ? parseInt(inwardDetails.accessoryGroupId)
-              : null,
-            sizeId: inwardDetails?.sizeId
-              ? parseInt(inwardDetails.sizeId)
-              : null,
-            qty: inwardDetails?.qty ? parseFloat(inwardDetails.qty) : 0,
-            uomId: inwardDetails?.uomId ? parseInt(inwardDetails.uomId) : null,
-            price: inwardDetails?.price ? parseInt(inwardDetails.price) : null,
-            inOrOut: inwardType + "Inward" || "MaterialInward",
-            filePath: inwardDetails?.filePath
-              ? inwardDetails?.filePath
-              : undefined,
-            invNo: invNo ? invNo : undefined,
-            itemType: inwardType ? inwardType : undefined,
-            portionId: inwardDetails?.portionId
-              ? parseInt(inwardDetails.portionId)
-              : null,
-          },
-        });
-      } else {
-        await tx.materialStock.create({
-          data: {
-            inOrOut: inwardType + "Inward" || "MaterialInward",
-            createdById: parseInt(userId),
-            branchId: parseInt(branchId),
-            storeId: parseInt(storeId),
-            fabricInwardItemsId: updatedItem.id,
-            styleNo: inwardDetails?.styleNo ?? undefined,
-            fabricId: inwardDetails?.fabricId
-              ? parseInt(inwardDetails.fabricId)
-              : null,
-            styleItemId: inwardDetails?.styleItemId
-              ? parseInt(inwardDetails.styleItemId)
-              : null,
-            styleId: inwardDetails?.styleId
-              ? parseInt(inwardDetails.styleId)
-              : null,
-            colorId: inwardDetails?.colorId
-              ? parseInt(inwardDetails.colorId)
-              : null,
-            fabWidth: inwardDetails?.fabWidth
-              ? parseFloat(inwardDetails.fabWidth)
-              : null,
-            fabMeter: inwardDetails?.fabMeter
-              ? parseFloat(inwardDetails.fabMeter)
-              : null,
-            noOfPcs: inwardDetails?.noOfPcs
-              ? parseInt(inwardDetails.noOfPcs)
-              : null,
-            accessoryId: inwardDetails?.accessoryId
-              ? parseInt(inwardDetails.accessoryId)
-              : null,
-            accessoryGroupId: inwardDetails?.accessoryGroupId
-              ? parseInt(inwardDetails.accessoryGroupId)
-              : null,
-            sizeId: inwardDetails?.sizeId
-              ? parseInt(inwardDetails.sizeId)
-              : null,
-            qty: inwardDetails?.qty ? parseFloat(inwardDetails.qty) : 0,
-            uomId: inwardDetails?.uomId ? parseInt(inwardDetails.uomId) : null,
-            price: inwardDetails?.price ? parseInt(inwardDetails.price) : null,
-            filePath: inwardDetails?.filePath
-              ? inwardDetails?.filePath
-              : undefined,
-            invNo: invNo ? invNo : undefined,
-            itemType: inwardType ? inwardType : undefined,
-            portionId: inwardDetails?.portionId
-              ? parseInt(inwardDetails.portionId)
-              : null,
-          },
-        });
-      }
-
-      return updatedItem;
-    } else {
-      // Create new FabricInwardItem
-      const createdItem = await tx.fabricInwardItems.create({
-        data: {
-          purchaseInwardId: parseInt(fabricInward.id),
-          styleNo: inwardDetails?.styleNo ?? undefined,
-          fabricId: inwardDetails?.fabricId
-            ? parseInt(inwardDetails.fabricId)
-            : null,
-          styleItemId: inwardDetails?.styleItemId
-            ? parseInt(inwardDetails.styleItemId)
-            : null,
-          styleId: inwardDetails?.styleId
-            ? parseInt(inwardDetails.styleId)
-            : null,
-          colorId: inwardDetails?.colorId
-            ? parseInt(inwardDetails.colorId)
-            : null,
-          fabWidth: inwardDetails?.fabWidth
-            ? parseFloat(inwardDetails.fabWidth)
-            : null,
-          fabMeter: inwardDetails?.fabMeter
-            ? parseFloat(inwardDetails.fabMeter)
-            : null,
-          noOfPcs: inwardDetails?.noOfPcs
-            ? parseInt(inwardDetails.noOfPcs)
-            : null,
-          accessoryId: inwardDetails?.accessoryId
-            ? parseInt(inwardDetails.accessoryId)
-            : null,
-          accessoryGroupId: inwardDetails?.accessoryGroupId
-            ? parseInt(inwardDetails.accessoryGroupId)
-            : null,
-          sizeId: inwardDetails?.sizeId ? parseInt(inwardDetails.sizeId) : null,
-          qty: inwardDetails?.qty ? parseFloat(inwardDetails.qty) : 0,
-          uomId: inwardDetails?.uomId ? parseInt(inwardDetails.uomId) : null,
-          price: inwardDetails?.price ? parseInt(inwardDetails.price) : null,
-          filePath: inwardDetails?.filePath
-            ? inwardDetails?.filePath
-            : undefined,
-          invNo: invNo ? invNo : undefined,
-          portionId: inwardDetails?.portionId
-            ? parseInt(inwardDetails.portionId)
-            : null,
-        },
-      });
-
-      // Create Stock row
-      await tx.materialStock.create({
-        data: {
-          inOrOut: inwardType + "Inward" || "MaterialInward",
-          createdById: parseInt(userId),
-          branchId: parseInt(branchId),
-          storeId: parseInt(storeId),
-          fabricInwardItemsId: createdItem.id,
-          styleNo: inwardDetails?.styleNo ?? undefined,
-          fabricId: inwardDetails?.fabricId
-            ? parseInt(inwardDetails.fabricId)
-            : null,
-          styleItemId: inwardDetails?.styleItemId
-            ? parseInt(inwardDetails.styleItemId)
-            : null,
-          styleId: inwardDetails?.styleId
-            ? parseInt(inwardDetails.styleId)
-            : null,
-          colorId: inwardDetails?.colorId
-            ? parseInt(inwardDetails.colorId)
-            : null,
-          fabWidth: inwardDetails?.fabWidth
-            ? parseFloat(inwardDetails.fabWidth)
-            : null,
-          fabMeter: inwardDetails?.fabMeter
-            ? parseFloat(inwardDetails.fabMeter)
-            : null,
-          noOfPcs: inwardDetails?.noOfPcs
-            ? parseInt(inwardDetails.noOfPcs)
-            : null,
-          accessoryId: inwardDetails?.accessoryId
-            ? parseInt(inwardDetails.accessoryId)
-            : null,
-          accessoryGroupId: inwardDetails?.accessoryGroupId
-            ? parseInt(inwardDetails.accessoryGroupId)
-            : null,
-          sizeId: inwardDetails?.sizeId ? parseInt(inwardDetails.sizeId) : null,
-          qty: inwardDetails?.qty ? parseFloat(inwardDetails.qty) : 0,
-          uomId: inwardDetails?.uomId ? parseInt(inwardDetails.uomId) : null,
-          price: inwardDetails?.price ? parseInt(inwardDetails.price) : null,
-          filePath: inwardDetails?.filePath
-            ? inwardDetails?.filePath
-            : undefined,
-          invNo: invNo ? invNo : undefined,
-          itemType: inwardType ? inwardType : undefined,
-          portionId: inwardDetails?.portionId
-            ? parseInt(inwardDetails.portionId)
-            : null,
-        },
-      });
-
-      return createdItem;
-    }
-  });
-
-  return Promise.all(promises);
-}
-
-async function updateReadyGoods(
-  tx,
-  readyGoods,
+  inwardItems,
   purchaseInward,
   userId,
-  branchId,
+  locationId,
   storeId,
-  invNo,
+  inwardType,
 ) {
-  const parsedReadyGoods = JSON.parse(readyGoods || "[]");
-  const existingRows = await tx.readyGoods.findMany({
-    where: { purchaseInwardId: parseInt(purchaseInward.id) },
-    select: { id: true },
-  });
-  const existingIds = existingRows.map((r) => r.id);
-  const incomingIds = parsedReadyGoods
-    .filter((r) => r.id)
-    .map((r) => parseInt(r.id));
-  const idsToDelete = existingIds.filter((id) => !incomingIds.includes(id));
-  if (idsToDelete.length > 0) {
-    // Delete stock first (FK dependency)
-    await tx.stock.deleteMany({
-      where: { readyGoodsId: { in: idsToDelete } },
-    });
-
-    // Delete ready goods
-    await tx.readyGoods.deleteMany({
-      where: { id: { in: idsToDelete } },
-    });
-  }
-  const promises = JSON.parse(readyGoods).map(async (stockDetail) => {
-    const qty = stockDetail?.qty
-      ? Math.round(parseFloat(stockDetail.qty))
-      : null;
-
+  const promises = inwardItems?.map(async (stockDetail) => {
     if (stockDetail.id) {
       // Update existing OpeningStockItem
-      const updatedItem = await tx.readyGoods.update({
+      const updatedItem = await tx.inwardItems.update({
         where: { id: parseInt(stockDetail.id) },
         data: {
           purchaseInwardId: parseInt(purchaseInward.id),
-          styleNo: stockDetail?.styleNo ?? undefined,
-          fabricId: stockDetail?.fabricId
-            ? parseInt(stockDetail.fabricId)
-            : null,
-          styleId: stockDetail?.styleId ? parseInt(stockDetail.styleId) : null,
           styleItemId: stockDetail?.styleItemId
             ? parseInt(stockDetail.styleItemId)
             : null,
-          sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-          colorId: stockDetail?.colorId ? parseInt(stockDetail.colorId) : null,
-          qty,
-          invNo: invNo ? invNo : "",
+          uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+          hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+          poQty: stockDetail?.poQty ? parseInt(stockDetail.poQty) : null,
+          inwardQty: stockDetail?.inwardQty
+            ? parseInt(stockDetail.inwardQty)
+            : null,
+          inwardType: inwardType ? inwardType : "",
+          poId: stockDetail?.poId ? parseInt(stockDetail.poId) : null,
         },
       });
 
       // Update or create Stock row
       const existingStock = await tx.stock.findFirst({
-        where: { readyGoodsId: updatedItem.id },
+        where: { inwardItemsId: updatedItem.id },
       });
 
       if (existingStock) {
         await tx.stock.update({
           where: { id: existingStock.id },
           data: {
-            styleId: stockDetail?.styleId
-              ? parseInt(stockDetail.styleId)
-              : null,
+            updatedById: parseInt(userId),
+            branchId: parseInt(locationId),
+            storeId: parseInt(storeId),
             styleItemId: stockDetail?.styleItemId
               ? parseInt(stockDetail.styleItemId)
               : null,
-            sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-            colorId: stockDetail?.colorId
-              ? parseInt(stockDetail.colorId)
+            uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+            hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+            qty: stockDetail?.inwardQty
+              ? parseInt(stockDetail.inwardQty)
               : null,
-            qty,
-            updatedById: parseInt(userId),
-            fabricId: stockDetail?.fabricId
-              ? parseInt(stockDetail.fabricId)
-              : null,
-            styleNo: stockDetail?.styleNo ?? undefined,
+            inwardType: inwardType ? inwardType : "",
           },
         });
       } else {
         await tx.stock.create({
           data: {
-            inOrOut: "PurchaseGoods",
+            inOrOut: "In",
+            processName: "Purchase Inward",
             createdById: parseInt(userId),
-            branchId: parseInt(branchId),
+            branchId: parseInt(locationId),
             storeId: parseInt(storeId),
-            styleId: stockDetail?.styleId
-              ? parseInt(stockDetail.styleId)
-              : null,
-            sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-            colorId: stockDetail?.colorId
-              ? parseInt(stockDetail.colorId)
-              : null,
-            qty,
-            readyGoodsId: updatedItem.id,
-            styleNo: stockDetail?.styleNo ?? undefined,
-            fabricId: stockDetail?.fabricId
-              ? parseInt(stockDetail.fabricId)
-              : null,
+            inwardItemsId: updatedItem.id,
             styleItemId: stockDetail?.styleItemId
               ? parseInt(stockDetail.styleItemId)
               : null,
+            uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+            hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+            qty: stockDetail?.inwardQty
+              ? parseInt(stockDetail.inwardQty)
+              : null,
+            inwardType: inwardType ? inwardType : "",
           },
         });
       }
@@ -1076,43 +715,39 @@ async function updateReadyGoods(
       return updatedItem;
     } else {
       // Create new OpeningStockItem
-      const createdItem = await tx.readyGoods.create({
+      const createdItem = await tx.inwardItems.create({
         data: {
           purchaseInwardId: parseInt(purchaseInward.id),
-          styleId: stockDetail?.styleId ? parseInt(stockDetail.styleId) : null,
-          sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-          colorId: stockDetail?.colorId ? parseInt(stockDetail.colorId) : null,
-          qty,
-          fabricId: stockDetail?.fabricId
-            ? parseInt(stockDetail.fabricId)
-            : null,
-          styleNo: stockDetail?.styleNo ?? undefined,
           styleItemId: stockDetail?.styleItemId
             ? parseInt(stockDetail.styleItemId)
             : null,
-          invNo: invNo ? invNo : "",
+          uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+          hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+          poQty: stockDetail?.poQty ? parseInt(stockDetail.poQty) : null,
+          inwardQty: stockDetail?.inwardQty
+            ? parseInt(stockDetail.inwardQty)
+            : null,
+          inwardType: inwardType ? inwardType : "",
+          poId: stockDetail?.poId ? parseInt(stockDetail.poId) : null,
         },
       });
 
       // Create Stock row
       await tx.stock.create({
         data: {
-          inOrOut: "PurchaseGoods",
+          inOrOut: "In",
+          processName: "Purchase Inward",
           createdById: parseInt(userId),
-          branchId: parseInt(branchId),
+          branchId: parseInt(locationId),
           storeId: parseInt(storeId),
-          fabricId: stockDetail?.fabricId
-            ? parseInt(stockDetail.fabricId)
-            : null,
-          styleId: stockDetail?.styleId ? parseInt(stockDetail.styleId) : null,
-          sizeId: stockDetail?.sizeId ? parseInt(stockDetail.sizeId) : null,
-          colorId: stockDetail?.colorId ? parseInt(stockDetail.colorId) : null,
-          qty,
-          readyGoodsId: createdItem.id,
-          styleNo: stockDetail?.styleNo ?? undefined,
+          inwardItemsId: createdItem.id,
           styleItemId: stockDetail?.styleItemId
             ? parseInt(stockDetail.styleItemId)
             : null,
+          uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+          hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+          qty: stockDetail?.inwardQty ? parseInt(stockDetail.inwardQty) : null,
+          inwardType: inwardType ? inwardType : "",
         },
       });
 
@@ -1151,15 +786,15 @@ async function getPurchaseDetail(req) {
           fabricId: true,
           styleItemId: true,
           styleId: true,
-          colorId: true,
+          hsnId: true,
           fabWidth: true,
           fabMeter: true,
-          sizeId: true,
+          uomId: true,
           noOfPcs: true,
           accessoryId: true,
           accessoryGroupId: true,
           accessoryItemId: true,
-          sizeId: true,
+          uomId: true,
           uomId: true,
           qty: true,
           price: true,
@@ -1196,7 +831,7 @@ async function getPurchaseDetailStock(req) {
       inwardType: returnType,
     },
     include: {
-      readyGoods: true,
+      inwardItems: true,
     },
   });
   if (!purchaseData || purchaseData.length === 0)
@@ -1209,11 +844,11 @@ async function getPurchaseDetailStock(req) {
     data = await prisma.materialStock.groupBy({
       by: [
         "fabricId",
-        "colorId",
+        "hsnId",
         "fabWidth",
         "accessoryId",
         "accessoryGroupId",
-        "sizeId",
+        "uomId",
         "uomId",
         "styleId",
         "invNo",
@@ -1231,24 +866,17 @@ async function getPurchaseDetailStock(req) {
     });
   } else {
     const rg =
-      purchaseData.readyGoods.filter(
-        (item) => item.styleId && item.styleItemId && item.sizeId,
+      purchaseData.inwardItems.filter(
+        (item) => item.styleId && item.styleItemId && item.uomId,
       ) || [];
     const orConditions = rg.map((item) => ({
       styleId: item.styleId,
       styleItemId: item.styleItemId,
-      colorId: item.colorId,
-      sizeId: item.sizeId,
+      hsnId: item.hsnId,
+      uomId: item.uomId,
     }));
     data = await prisma.stock.groupBy({
-      by: [
-        "fabricId",
-        "colorId",
-        "sizeId",
-        "styleId",
-        "styleItemId",
-        "styleNo",
-      ],
+      by: ["fabricId", "hsnId", "uomId", "styleId", "styleItemId", "styleNo"],
       where: {
         branchId: branchId ? parseInt(branchId) : undefined,
         storeId: storeId ? parseInt(storeId) : undefined,
@@ -1270,13 +898,13 @@ async function getPurchaseDetailStock(req) {
           invNo: d.invNo,
           styleItemId: d.styleItemId,
           fabricId: d.fabricId,
-          colorId: d.colorId,
-          sizeId: d.sizeId,
+          hsnId: d.hsnId,
+          uomId: d.uomId,
           fabWidth: d.fabWidth,
           fabMeter: d._sum.fabMeter,
           accessoryId: d.accessoryId,
           accessoryGroupId: d.accessoryGroupId,
-          sizeId: d.sizeId,
+          uomId: d.uomId,
           uomId: d.uomId,
           qty: d._sum.qty,
           styleId: d.styleId,
@@ -1286,8 +914,8 @@ async function getPurchaseDetailStock(req) {
           invNo: purchaseData.invNo,
           styleItemId: d.styleItemId,
           fabricId: d.fabricId,
-          colorId: d.colorId,
-          sizeId: d.sizeId,
+          hsnId: d.hsnId,
+          uomId: d.uomId,
           stkQty: d._sum.qty,
           styleId: d.styleId,
           styleNo: d.styleNo,

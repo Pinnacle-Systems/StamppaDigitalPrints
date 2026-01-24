@@ -3,15 +3,13 @@ import PurchaseInwardForm from "./PurchaseInwardForm.js";
 import PurchaseInwardFormReport from "./PurchaseInwardFormReport.js"
 import { getCommonParams } from "../../../Utils/helper.js";
 import { FaPlus } from "react-icons/fa";
-import { useGetTaxTemplateQuery } from "../../../redux/services/TaxTemplateServices.js";
 import { useGetPartyQuery } from "../../../redux/services/PartyMasterService.js";
 import { useGetBranchQuery } from "../../../redux/services/BranchMasterService.js";
 import { useGetStyleItemMasterQuery } from "../../../redux/services/StyleItemMasterService.js";
 import { useGetHsnMasterQuery } from "../../../redux/services/HsnMasterServices.js";
 import { useGetUnitOfMeasurementMasterQuery } from "../../../redux/uniformService/UnitOfMeasurementServices";
 import Swal from "sweetalert2";
-import { useDeletePoMutation } from "../../../redux/uniformService/PoServices.js";
-import { useGetTermsandCondtionsQuery } from "../../../redux/uniformService/TermsAndContionService.js";
+import { useDeletePurchaseInwardEntryMutation } from "../../../redux/uniformService/PurchaseInwardEntry.js";
 
 export default function Form() {
   const [showForm, setShowForm] = useState(false);
@@ -22,11 +20,6 @@ export default function Form() {
   const params = {
     branchId, companyId, finYearId
   };
-  const {
-    data: termsData,
-    isLoading,
-    isFetching,
-  } = useGetTermsandCondtionsQuery({ params });
 
   const handleView = (orderId) => {
     setId(orderId);
@@ -39,7 +32,7 @@ export default function Form() {
     setShowForm(true);
     setReadOnly(false);
   };
-  const [removeData] = useDeletePoMutation();
+  const [removeData] = useDeletePurchaseInwardEntryMutation();
   const handleDelete = async (id) => {
     setId(id);
     if (id) {
@@ -80,8 +73,6 @@ export default function Form() {
     setReadOnly(false);
   };
 
-  const { data: taxTypeList, isLoading: isTaxLoading, isFetching: isTaxfetching } =
-    useGetTaxTemplateQuery({ params: { ...params } });
   const { data: supplierList } = useGetPartyQuery({ params: { ...params } });
   const { data: branchList } = useGetBranchQuery({ params: { ...params } });
   const { data: styleItemList } = useGetStyleItemMasterQuery({ params: { ...params } });
@@ -98,7 +89,7 @@ export default function Form() {
         <div className="flex flex-col sm:flex-row justify-between bg-white py-1 px-1 items-start sm:items-center mb-4 gap-x-4 rounded-tl-lg rounded-tr-lg shadow-sm border border-gray-200">
           <div>
             <h1 className="text-lg font-bold text-gray-800">
-              Purchase Order Report
+              Purchase Inward Report
             </h1>
           </div>
 
@@ -137,13 +128,11 @@ export default function Form() {
             setReadOnly((prev) => !prev);
           }}
           setShowForm={setShowForm}
-          taxTypeList={taxTypeList}
           supplierList={supplierList}
           branchList={branchList}
           uomList={uomList}
           styleItemList={styleItemList}
           hsnList={hsnList}
-          termsData={termsData}
           onNew={onNew}
         />
       )}

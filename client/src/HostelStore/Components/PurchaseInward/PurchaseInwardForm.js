@@ -2,6 +2,7 @@ import { FaEye, FaFileAlt } from "react-icons/fa";
 
 import {
   CheckBox,
+  DateInput,
   DateInputNew,
   DropdownInput,
   DropdownWithSearch,
@@ -9,15 +10,7 @@ import {
   ReusableSearchableInput,
   TextInput,
 } from "../../../Inputs";
-import {
-  deliveryTypes,
-  MaterialType,
-  poMaterial,
-  poTypes,
-  purchaseType,
-  stockTransferType,
-  YarnMaterial,
-} from "../../../Utils/DropdownData";
+import { inwardTypes } from "../../../Utils/DropdownData";
 import { useCallback, useEffect, useRef, useState } from "react";
 import moment from "moment";
 import {
@@ -33,12 +26,6 @@ import { toast } from "react-toastify";
 import { FiEdit2, FiPrinter, FiSave } from "react-icons/fi";
 import { HiOutlineRefresh, HiX } from "react-icons/hi";
 import { FaWhatsapp } from "react-icons/fa6";
-import {
-  useAddPoMutation,
-  useDeletePoMutation,
-  useGetPoByIdQuery,
-  useUpdatePoMutation,
-} from "../../../redux/uniformService/PoServices";
 import Swal from "sweetalert2";
 import { PDFViewer } from "@react-pdf/renderer";
 import tw from "../../../Utils/tailwind-react-pdf";
@@ -51,19 +38,21 @@ import {
 } from "../../../redux/services/BranchMasterService";
 import { groupBy } from "lodash";
 import InwardItems from "./InwardItems";
-// import PurchaseOrderPrintFormat from "./PrintFormat-PO";
+import {
+  useAddPurchaseInwardEntryMutation,
+  useGetPurchaseInwardEntryByIdQuery,
+  useUpdatePurchaseInwardEntryMutation,
+} from "../../../redux/uniformService/PurchaseInwardEntry";
+import { useGetLocationMasterQuery } from "../../../redux/services/LocationMasterService";
 const PurchaseInwardForm = ({
   onClose,
   id,
   setId,
   readOnly,
   setReadOnly,
-  taxTypeList,
   supplierList,
-  yarnList,
   uomList,
   styleItemList,
-  termsData,
   branchList,
   hsnList,
   onNew,
@@ -73,49 +62,39 @@ const PurchaseInwardForm = ({
   const [docDate, setDocDate] = useState(
     moment.utc(today).format("YYYY-MM-DD"),
   );
-  const [taxTemplateId, setTaxTemplateId] = useState("");
-  const [payTermId, setPayTermId] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [poType, setPoType] = useState("Order Purchase");
-  const [poMaterial, setPoMaterial] = useState("DyedYarn");
   const [supplierId, setSupplierId] = useState("");
-  const [termsAndCondtion, setTermsAndCondtion] = useState("");
-  const [termsId, setTermsId] = useState("");
-  const [poItems, setPoItems] = useState([]);
-  const [discountType, setDiscountType] = useState("Percentage");
-  const [discountValue, setDiscountValue] = useState();
-  const [taxPercent, setTaxPercent] = useState();
-  const [orderId, setOrderId] = useState("");
+  const [inwardItems, setInwardItems] = useState([]);
   const [remarks, setRemarks] = useState("");
-  const [PurchaseType, setPurchaseType] = useState("General Purchase");
-  const [summary, setSummary] = useState(false);
+  const [inwardType, setInwardType] = useState("General Purchase Inward");
+  const [storeId, setStoreId] = useState("");
   const [docId, setDocId] = useState("");
-  const [deliveryType, setDeliveryType] = useState("");
-  const [deliveryToId, setDeliveryToId] = useState("");
-  const [showExtraCharge, setShowExtraCharge] = useState(false);
-  const [printModalOpen, setPrintModalOpen] = useState(false);
-  const [tableDataView, setTableDataView] = useState(false);
-  const [isNewVersion, setIsNewVersion] = useState(false);
-  const [quoteVersion, setQuoteVersion] = useState("1");
+  const [locationId, setLocationId] = useState("");
+  const [dcNo, setDcNo] = useState("");
+  const [dcDate, setDcDate] = useState("");
+  const [vehicleNo, setVehicleNo] = useState("");
 
-  const [requirementId, setRequirementId] = useState("");
-
-  const { branchId, userId, finYearId } = getCommonParams();
-  const params = { branchId, userId, finYearId, poMaterial: poMaterial };
+  const { userId, finYearId, branchId } = getCommonParams();
   const { data: supplierDetails } = useGetPartyByIdQuery(supplierId, {
     skip: !supplierId,
   });
+  const { data: locationData } = useGetLocationMasterQuery({
+    params: { branchId },
+  });
 
-  const componentRef = useRef();
+  const storeOptions = locationData
+    ? locationData.data.filter(
+        (item) => parseInt(item.locationId) === parseInt(locationId),
+      )
+    : [];
 
   const {
     data: singleData,
     isFetching: isSingleFetching,
     isLoading: isSingleLoading,
-  } = useGetPoByIdQuery(id, { skip: !id });
+  } = useGetPurchaseInwardEntryByIdQuery(id, { skip: !id });
 
-  const [addData] = useAddPoMutation();
-  const [updateData] = useUpdatePoMutation();
+  const [addData] = useAddPurchaseInwardEntryMutation();
+  const [updateData] = useUpdatePurchaseInwardEntryMutation();
 
   const { data: branchdata } = useGetBranchByIdQuery(branchId, {
     skip: !branchId,
@@ -123,39 +102,23 @@ const PurchaseInwardForm = ({
 
   const syncFormWithDb = useCallback(
     (data) => {
-      // setReadOnly(true)
-
-      setPoType(data?.poType ? data?.poType : "GENERAL");
+      setDocId(data?.docId ? data?.docId : "New");
       setDocDate(
         data?.docDate
           ? moment.utc(data.docDate).format("YYYY-MM-DD")
           : moment.utc(new Date()).format("YYYY-MM-DD"),
       );
-
-      setPoItems(data?.poItems ? data?.poItems : []);
-      setDocId(data?.docId ? data?.docId : "New");
-      setDiscountType(data?.discountType || "Percentage");
-      setTaxPercent(data?.taxPercent ? data?.taxPercent : "");
-      setDiscountValue(data?.discountValue || "0");
+      setInwardType(data?.inwardType || "General Purchase Inward");
+      setLocationId(data?.Store ? data.Store.locationId : branchId);
+      setStoreId(data?.storeId ? data.storeId : "");
+      setInwardItems(data?.inwardItems ? data?.inwardItems : []);
       setSupplierId(data?.supplierId || "");
-      setDueDate(
-        data?.dueDate ? moment.utc(data.dueDate).format("YYYY-MM-DD") : "",
-      );
-      setDeliveryType(data?.deliveryType || "");
-      setDeliveryToId(
-        data?.deliveryType === "ToSelf"
-          ? data?.deliveryBranchId
-          : data?.deliveryToId || "",
+      setDcDate(
+        data?.dcDate ? moment.utc(data.dcDate).format("YYYY-MM-DD") : "",
       );
       setRemarks(data?.remarks || "");
-      setPurchaseType(data?.PurchaseType ? data?.PurchaseType : "");
-      setOrderId(data?.orderId ? data?.orderId : "");
-      setRequirementId(data?.requirementId ? data?.requirementId : "");
-      setTaxTemplateId(data?.taxTemplateId ? data?.taxTemplateId : "");
-      setTermsAndCondtion(data?.termsAndCondtion ? data?.termsAndCondtion : "");
-      setTermsId(data?.termsId ? data?.termsId : "");
-      setIsNewVersion(false);
-      setQuoteVersion(data?.quoteVersion || 1);
+      setDcNo(data?.dcNo ? data.dcNo : "");
+      setVehicleNo(data?.vehicleNo ? data.vehicleNo : "");
     },
     [id],
   );
@@ -169,26 +132,20 @@ const PurchaseInwardForm = ({
   }, [isSingleFetching, isSingleLoading, id, syncFormWithDb, singleData]);
 
   let data = {
-    supplierId,
-    dueDate,
+    id,
     docDate,
     branchId,
-    id,
     userId,
+    inwardType,
+    locationId,
+    storeId,
+    supplierId,
+    dcNo,
+    dcDate,
     remarks,
-    poItems: poItems?.filter((po) => po.styleItemId),
-    deliveryType,
-    deliveryToId,
-    discountType,
-    discountValue,
-    taxPercent,
+    vehicleNo,
+    inwardItems: inwardItems?.filter((po) => po.styleItemId),
     finYearId,
-    poType,
-    taxTemplateId,
-    termsAndCondtion,
-    termsId,
-    isNewVersion,
-    quoteVersion,
   };
 
   const handleSubmitCustom = async (callback, data, text, nextProcess) => {
@@ -251,7 +208,7 @@ const PurchaseInwardForm = ({
   };
 
   const validateData = (data) => {
-    const items = data?.poItems || [];
+    const items = data?.inwardItems || [];
 
     // remove blank rows
     const filledItems = items.filter((item) => item.styleItemId);
@@ -270,16 +227,17 @@ const PurchaseInwardForm = ({
       });
       return false;
     }
-    let mandatoryFields = ["styleItemId", "hsnId", "uomId", "qty", "price"];
+    let mandatoryFields = ["styleItemId", "hsnId", "uomId", "inwardQty"];
     if (
       !(
-        data?.dueDate &&
-        data.poType &&
-        data.taxTemplateId &&
+        data.inwardType &&
+        data.locationId &&
+        data.storeId &&
+        data?.dcDate &&
+        data.dcNo &&
         data.supplierId &&
-        data.deliveryType &&
-        isGridDatasValid(data?.poItems, false, mandatoryFields) &&
-        data?.poItems?.length !== 0
+        isGridDatasValid(data?.inwardItems, false, mandatoryFields) &&
+        data?.inwardItems?.length !== 0
       )
     ) {
       Swal.fire({
@@ -325,64 +283,20 @@ const PurchaseInwardForm = ({
 
   const dateRef = useRef(null);
   const inputPartyRef = useRef(null);
-  const styleRef = useRef(null);
 
-  useEffect(() => {
-    if (dateRef.current && !id) {
-      dateRef.current.focus();
+  const handleKeyDown = (event) => {
+    let charCode = String.fromCharCode(event.which).toLowerCase();
+    if ((event.ctrlKey || event.metaKey) && charCode === "s") {
+      event.preventDefault();
+      saveData();
     }
-  }, []);
-
-  const allSuppliers = supplierList ? supplierList.data : [];
-
-  function filterSupplier() {
-    let finalSupplier = [];
-    if (poMaterial.toLowerCase().includes("yarn")) {
-      finalSupplier = allSuppliers.filter((s) => s.yarn);
-    } else if (poMaterial.toLowerCase().includes("fabric")) {
-      finalSupplier = allSuppliers.filter((s) => s.fabric);
-    } else {
-      finalSupplier = allSuppliers.filter(
-        (s) => s.PartyOnAccessoryItems?.length > 0,
-      );
-    }
-    return finalSupplier;
-  }
-  let supplierListBasedOnSupply = filterSupplier();
-
-  const taxGroupWise = groupBy(poItems, "taxPercent");
-
-  const filtered = Object.fromEntries(
-    Object.entries(taxGroupWise)
-      .filter(([key]) => key && key !== "undefined")
-      .map(([key, arr]) => [key, arr.filter((item) => item && item.yarnId)])
-      .filter(([_, arr]) => arr.length > 0),
-  );
-
-  const { data: deliveryToBranch } = useGetBranchByIdQuery(deliveryToId, {
-    skip: deliveryType === "ToParty",
-  });
-  const { data: deliveryToSupplier } = useGetPartyByIdQuery(deliveryToId, {
-    skip: deliveryType === "ToSelf",
-  });
-
-  let deliveryTo =
-    deliveryType === "ToParty"
-      ? deliveryToSupplier?.data
-      : deliveryToBranch?.data;
-
-  function isSupplierOutside() {
-    if (supplierDetails) {
-      return supplierDetails?.data?.City?.state?.name !== "TAMIL NADU";
-    }
-    return false;
-  }
+  };
 
   return (
     <>
       <div className="w-full  mx-auto rounded-md shadow-lg px-2 py-1 overflow-y-auto">
         <div className="flex justify-between items-center">
-          <h1 className="text-lg font-bold text-gray-800">Purchase Order</h1>
+          <h1 className="text-lg font-bold text-gray-800">Purchase Inward</h1>
           <button
             onClick={() => {
               // onNew();
@@ -395,95 +309,81 @@ const PurchaseInwardForm = ({
           </button>
         </div>
       </div>
-      <div className="space-y-3 py-2">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+      <div className="space-y-2 py-2" onKeyDown={handleKeyDown}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm col-span-1">
             <h2 className="font-medium text-slate-700 mb-2">Basic Details</h2>
             <div className="grid grid-cols-2 gap-1">
-              <ReusableInput label="Purchase Order No" readOnly value={docId} />
               <ReusableInput
-                label="Purchase Order Date"
+                label="Purchase Inward No"
+                readOnly
+                value={docId}
+              />
+              <ReusableInput
+                label="Purchase Inward Date"
                 value={docDate}
                 type={"date"}
                 required={true}
                 readOnly={true}
                 disabled
               />
-              <DateInputNew
-                name="Delivery Date"
-                value={dueDate}
-                setValue={setDueDate}
-                type={"date"}
-                required={true}
-                ref={dateRef}
-                nextRef={inputPartyRef}
-                readOnly={readOnly}
-              />
             </div>
           </div>
 
           <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm col-span-1">
-            <h2 className="font-medium text-slate-700 mb-2">Po Details</h2>
+            <h2 className="font-medium text-slate-700 mb-2">Inward Details</h2>
             <div className="grid grid-cols-2 gap-1 ">
               <DropdownInput
-                name="Po Type"
-                options={poTypes}
-                value={poType}
+                name="Branch"
+                options={
+                  branchList
+                    ? dropDownListObject(
+                        id
+                          ? branchList?.data
+                          : branchList?.data?.filter((item) => item.active),
+                        "branchName",
+                        "id",
+                      )
+                    : []
+                }
+                value={locationId}
                 setValue={(value) => {
-                  setPoType(value);
+                  setLocationId(value);
+                  setStoreId("");
+                }}
+                required={true}
+                readOnly={id}
+                autoFocus={true}
+              />
+              <DropdownInput
+                name="Location"
+                options={dropDownListObject(
+                  id
+                    ? storeOptions
+                    : storeOptions?.filter((item) => item.active),
+                  "storeName",
+                  "id",
+                )}
+                value={storeId}
+                setValue={setStoreId}
+                required={true}
+                readOnly={id}
+              />
+              <DropdownInput
+                name="Inward Type"
+                options={inwardTypes}
+                value={inwardType}
+                setValue={(value) => {
+                  setInwardType(value);
                 }}
                 required={true}
                 readOnly={readOnly}
-                disabled={orderId || id}
+                disabled={id}
+                beforeChange={() => {
+                  setInwardItems([]);
+                }}
               />
 
-              <DropdownInput
-                name="Tax Type"
-                options={dropDownListObject(
-                  taxTypeList ? taxTypeList?.data : [],
-                  "name",
-                  "id",
-                )}
-                value={taxTemplateId}
-                setValue={setTaxTemplateId}
-                required={true}
-                readOnly={readOnly}
-              />
-              {!readOnly && id && (
-                <div className="col-span-1 mt-3">
-                  <CheckBox
-                    name="New Version"
-                    value={isNewVersion}
-                    setValue={setIsNewVersion}
-                    readOnly={readOnly}
-                    className="w-full"
-                  />
-                </div>
-              )}
-              {/* {id && (
-                <div className="col-span-1">
-                  <DropdownInput
-                    readOnly={true}
-                    name="Current Version"
-                    value={quoteVersion}
-                    setValue={(value) => setQuoteVersion(value)}
-                    options={[
-                      ...new Set(
-                        poItems
-                          .map((i) => i.quoteVersion),
-                      ),
-                    ].map((i) => ({ show: i, value: i }))}
-                  />
-                </div>
-              )} */}
-              {id && (
-                <TextInput
-                  name="Current Version"
-                  placeholder="Contact name"
-                  value={quoteVersion}
-                  disabled={true}
-                />
-              )}
               <div></div>
             </div>
           </div>
@@ -492,12 +392,12 @@ const PurchaseInwardForm = ({
             <h2 className="font-medium text-slate-700 mb-2">
               Supplier Details
             </h2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1">
               <div className="col-span-2">
                 <ReusableSearchableInput
-                  label="Supplier"
+                  label="Supplier Id"
                   component="PartyMaster"
-                  placeholder="Search Supplier ..."
+                  placeholder="Search Supplier Id..."
                   optionList={supplierList?.data}
                   setSearchTerm={(value) => {
                     setSupplierId(value);
@@ -508,81 +408,22 @@ const PurchaseInwardForm = ({
                   disabled={id}
                 />
               </div>
-
               <TextInput
-                name="Contact Person"
-                placeholder="Contact name"
-                value={findFromList(
-                  supplierId,
-                  supplierList?.data,
-                  "contactPersonName",
-                )}
-                disabled={true}
-              />
-
-              <TextInput
-                name="Phone"
-                placeholder="Contact name"
-                value={findFromList(
-                  supplierId,
-                  supplierList?.data,
-                  "contactNumber",
-                )}
-                disabled={true}
-              />
-            </div>
-          </div>
-
-          <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm col-span-1">
-            <h2 className="font-medium text-slate-700 mb-2">
-              Delivery Details
-            </h2>
-            <div className="grid grid-cols-3 gap-2">
-              <DropdownInput
-                name="Delivery Type"
-                options={deliveryTypes}
-                // option={delivery}
-                value={deliveryType}
-                setValue={setDeliveryType}
-                required={true}
+                name={"Dc No."}
+                value={dcNo}
+                setValue={setDcNo}
                 readOnly={readOnly}
+                required
               />
-              <div className="col-span-2">
-                {deliveryType == "ToSelf" ? (
-                  <DropdownInput
-                    name="Delivery To"
-                    options={
-                      deliveryType === "ToSelf"
-                        ? dropDownListObject(
-                            branchList ? branchList.data : [],
-                            "branchName",
-                            "id",
-                          )
-                        : dropDownListObject(
-                            supplierListBasedOnSupply,
-                            "name",
-                            "id",
-                          )
-                    }
-                    value={deliveryToId}
-                    setValue={setDeliveryToId}
-                    required={true}
-                    readOnly={readOnly}
-                  />
-                ) : (
-                  <DropdownInput
-                    name="Delivery To"
-                    options={dropDownListObject(
-                      supplierList?.data?.filter((val) => val.isSupplier),
-                      "partyCode",
-                      "id",
-                    )}
-                    value={deliveryToId}
-                    setValue={setDeliveryToId}
-                    required={true}
-                    readOnly={readOnly}
-                  />
-                )}
+              <div className="w-44">
+                <DateInputNew
+                  name="Dc Date"
+                  value={dcDate}
+                  setValue={setDcDate}
+                  required={true}
+                  readOnly={readOnly}
+                  type={"date"}
+                />
               </div>
             </div>
           </div>
@@ -590,59 +431,32 @@ const PurchaseInwardForm = ({
         <fieldset className="">
           <InwardItems
             id={id}
-            poItems={poItems}
-            setPoItems={setPoItems}
+            inwardItems={inwardItems}
+            setInwardItems={setInwardItems}
             readOnly={readOnly}
             uomList={uomList}
             hsnList={hsnList}
             styleItemList={styleItemList}
-            taxTemplateId={taxTemplateId}
+            inwardType={inwardType}
+            supplierId={supplierId}
+            branchId={branchId}
           />
         </fieldset>
 
-        <div className="grid grid-cols-4 gap-3">
-          <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm ">
-            <div className="flex flex-col gap-2">
-              <h2 className="font-bold text-slate-700 mb-2 text-base">
-                Terms & Conditions
-              </h2>
-
-              <select
-                value={termsId}
-                onChange={(e) => {
-                  const selectedId = e.target.value;
-
-                  setTermsId(selectedId);
-
-                  const selectedTerm = termsData?.data?.find(
-                    (item) => String(item.id) === String(selectedId),
-                  );
-
-                  setTermsAndCondtion(selectedTerm?.description || "");
-                }}
-                readOnly={readOnly}
-                className="text-left h-15  w-full rounded py-1 border-2 border-gray-200 text-[13px]"
-              >
-                <option></option>
-                {(id
-                  ? termsData?.data
-                  : termsData?.data?.filter((item) => item?.active)
-                )?.map((blend) => (
-                  <option value={blend.id} key={blend.id}>
-                    {blend?.name.substring(0, 50)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm flex items-center">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm">
+            <h2 className="font-medium text-slate-700 mb-2 text-base">
+              Vehicle No
+            </h2>
             <textarea
+              readOnly={readOnly}
+              value={vehicleNo}
+              onChange={(e) => {
+                setVehicleNo(e.target.value);
+              }}
+              className="w-full overflow-auto h-10 px-2.5 py-2 text-xs border border-slate-300 rounded-md  focus:ring-1 focus:ring-indigo-200 focus:border-indigo-500"
+              placeholder="Vehicle Details..."
               disabled={readOnly}
-              className="w-full h-14 overflow-auto px-2.5 py-2 text-xs border border-slate-300 rounded-md  focus:ring-1 focus:ring-indigo-200 focus:border-indigo-500"
-              value={termsAndCondtion}
-              onChange={(e) => setTermsAndCondtion(e.target.value)}
-              placeholder="Type Terms & Conditions..."
             />
           </div>
 
@@ -660,26 +474,33 @@ const PurchaseInwardForm = ({
               placeholder="Additional notes..."
             />
           </div>
-
           <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm">
-            <h2 className="font-bold text-slate-800 mb-2 text-base">
-              Po Summary
+            <h2 className="font-semibold text-slate-800 mb-2 text-base">
+              Qty Summary
             </h2>
 
-            <button
-              className="text-sm bg-sky-500 hover:text-white font-semibold hover:bg-sky-800 transition p-1 ml-5 rounded"
-              onClick={() => {
-                if (!taxTemplateId) {
-                  toast.info("Please Select Tax Template !", {
-                    position: "top-center",
-                  });
-                  return;
-                }
-                setSummary(true);
-              }}
-            >
-              View Po Summary
-            </button>
+            {inwardType !== "Direct Inward" && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between  text-sm">
+                  <span className="text-slate-600">Total Order Qty</span>
+                  <span className="font-medium">
+                    {inwardItems
+                      .reduce((sum, row) => sum + (Number(row.poQty) || 0), 0)
+                      .toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <div className="flex justify-between  text-sm">
+                <span className="text-slate-600">Total Inward Qty</span>
+                <span className="font-medium">
+                  {inwardItems
+                    .reduce((sum, row) => sum + (Number(row.inwardQty) || 0), 0)
+                    .toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -700,21 +521,9 @@ const PurchaseInwardForm = ({
               <HiOutlineRefresh className="w-4 h-4 mr-2" />
               Save & Close
             </button>
-            {/* <button
-              onClick={() => saveData("draft")}
-              className="bg-indigo-500 text-white px-4 py-1 rounded-md hover:bg-indigo-600 flex items-center text-sm"
-            >
-              <HiOutlineRefresh className="w-4 h-4 mr-2" />
-              Draft Save
-            </button> */}
           </div>
 
-          {/* Right Buttons */}
           <div className="flex gap-2 flex-wrap">
-            {/* <button className="bg-emerald-600 text-white px-4 py-1 rounded-md hover:bg-emerald-700 flex items-center text-sm">
-                                                   <FiShare2 className="w-4 h-4 mr-2" />
-                                                   Email
-                                               </button> */}
             <button
               className="bg-yellow-600 text-white px-4 py-1 rounded-md hover:bg-yellow-700 flex items-center text-sm"
               onClick={() => setReadOnly(false)}
@@ -722,24 +531,6 @@ const PurchaseInwardForm = ({
               <FiEdit2 className="w-4 h-4 mr-2" />
               Edit
             </button>
-            {/* <button className="bg-emerald-600 text-white px-4 py-1 rounded-md hover:bg-emerald-700 flex items-center text-sm"
-              onClick={() => {
-                setPrintModalOpen(true)
-              }}
-            >
-              <FaEye className="w-4 h-4 mr-2" />
-              Preview
-            </button> */}
-            {/* <button
-              className="bg-slate-600 text-white px-4 py-1 rounded-md hover:bg-slate-700 flex items-center text-sm"
-              onClick={() => {
-                // handlePrint()
-                setPrintModalOpen(true);
-              }}
-            >
-              <FiPrinter className="w-4 h-4 mr-2" />
-              Print
-            </button> */}
           </div>
         </div>
       </div>

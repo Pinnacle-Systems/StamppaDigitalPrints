@@ -44,7 +44,7 @@ export { default as taxTemplate } from "./taxTemplate.route.js"
 export { default as hsn } from "./hsn.route.js"
 export { default as partyBranch } from "./partyBranch.route.js"
 export { default as branchType } from "./BranchType.route.js"
-
+export { default as purchaseInwardEntry } from "./purchaseInwardEntry.route.js";
 export {default as openingBalance} from './openingBalance.route.js'
 export { default as po } from "./po.route.js"
 export { default as payTerm } from "./payTerm.route.js";

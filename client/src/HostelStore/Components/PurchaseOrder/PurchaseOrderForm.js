@@ -394,6 +394,14 @@ const PurchaseOrderForm = ({
     ),
   ].sort((a, b) => a - b);
 
+   const handleKeyDown = (event) => {
+    let charCode = String.fromCharCode(event.which).toLowerCase();
+    if ((event.ctrlKey || event.metaKey) && charCode === "s") {
+      event.preventDefault();
+      saveData();
+    }
+  };
+
   return (
     <>
       <Modal
@@ -438,7 +446,7 @@ const PurchaseOrderForm = ({
           </button>
         </div>
       </div>
-      <div className="space-y-3 py-2">
+      <div className="space-y-2 py-2"  onKeyDown={handleKeyDown}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="border border-slate-200 p-2 bg-white rounded-md shadow-sm col-span-1">
             <h2 className="font-medium text-slate-700 mb-2">Basic Details</h2>

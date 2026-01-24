@@ -9,13 +9,13 @@ import {
 } from "../../../Utils/helper";
 import { showEntries } from "../../../Utils/DropdownData";
 import secureLocalStorage from "react-secure-storage";
-import { useGetPoQuery } from "../../../redux/uniformService/PoServices";
 import {
   pageNumberToReactPaginateIndex,
   reactPaginateIndexToPageNumber,
 } from "../../../Utils/helper";
 import ReactPaginate from "react-paginate";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useGetPurchaseInwardEntryQuery } from "../../../redux/uniformService/PurchaseInwardEntry";
 
 const PurchaseInwardFormReport = ({
   onClick,
@@ -29,13 +29,13 @@ const PurchaseInwardFormReport = ({
     sessionStorage.getItem("sessionId") + "currentBranchId",
   );
 
-  const [dataPerPage, setDataPerPage] = useState("1");
+  const [dataPerPage, setDataPerPage] = useState("10");
   const [serachDocNo, setSerachDocNo] = useState("");
   const [searchClientName, setSearchClientName] = useState("");
   const [searchDate, setSearchDate] = useState("");
   const [searchDeliveryDate, setSearchDeliveryDate] = useState("");
-  const [supplier, setSupplier] = useState("");
-  const [searchPoType, setSearchPoType] = useState("");
+  const [searchSupplier, setSearchSupplier] = useState("");
+  const [searchInwardType, setSearchInwardType] = useState("");
 
   const [totalCount, setTotalCount] = useState(0);
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
@@ -47,15 +47,14 @@ const PurchaseInwardFormReport = ({
   };
   const searchFields = {
     serachDocNo,
-    searchClientName,
     searchDate,
-    supplier,
-    searchPoType,
+    searchSupplier,
+    searchInwardType,
   };
 
   useEffect(() => {
     setCurrentPageNumber(1);
-  }, [serachDocNo, searchClientName, searchDate, supplier, searchPoType]);
+  }, [serachDocNo, searchClientName, searchDate, searchSupplier, searchInwardType]);
 
   const companyId = secureLocalStorage.getItem(
     sessionStorage.getItem("sessionId") + "userCompanyId",
@@ -69,7 +68,7 @@ const PurchaseInwardFormReport = ({
     data: allData,
     isFetching,
     isLoading,
-  } = useGetPoQuery({
+  } = useGetPurchaseInwardEntryQuery({
     params: {
       branchId,
       ...searchFields,
@@ -87,15 +86,11 @@ const PurchaseInwardFormReport = ({
 
   const isLoadingIndicator = isLoading || isFetching;
 
-  console.log(allData, "entire");
-
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math?.ceil(allData?.data?.length / itemsPerPage);
   const indexOfLastItem = currentPage * parseInt(10);
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = allData?.data?.slice(indexOfFirstItem, indexOfLastItem);
-
-  console.log(indexOfLastItem, "indexOfLastItem");
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -201,7 +196,7 @@ const PurchaseInwardFormReport = ({
                   </th>
 
                   <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-32">
-                    <div>Po No</div>
+                    <div>Inward No</div>
                     {/* <input
                                             type="text"
                                             className="text-black h-5   w-full py-1.5  px-1 focus:outline-none border  border-gray-400 rounded-lg"
@@ -213,7 +208,7 @@ const PurchaseInwardFormReport = ({
                                         /> */}
                   </th>
                   <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-32">
-                    <div>Po Date</div>
+                    <div>Inward Date</div>
                     {/* <input
                                             type="text"
                                             className="text-black h-5   w-full py-1.5  px-1 focus:outline-none border  border-gray-400 rounded-lg"
@@ -224,11 +219,8 @@ const PurchaseInwardFormReport = ({
                                             }}
                                         /> */}
                   </th>
-                  <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-32">
-                    <div>Delivery Date</div>
-                  </th>
                   <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-40">
-                    <div>Po Type</div>
+                    <div>Inward Type</div>
                     {/* <input
                                             type="text"
                                             className="text-black h-5   w-full py-1.5  px-1 focus:outline-none border  border-gray-400 rounded-lg"
@@ -283,25 +275,14 @@ const PurchaseInwardFormReport = ({
                       }}
                     />
                   </th>
-                  <th className="  px-1 font-medium text-[13px]  text-gray-900  text-center w-32">
-                    <input
-                      type="text"
-                      className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
-                      placeholder="Search"
-                      value={searchDeliveryDate}
-                      onChange={(e) => {
-                        setSearchDeliveryDate(e.target.value);
-                      }}
-                    />
-                  </th>
                   <th className="  px-1 font-medium text-[13px]  text-gray-900  text-center w-40">
                     <input
                       type="text"
                       className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
                       placeholder="Search"
-                      value={searchPoType}
+                      value={searchInwardType}
                       onChange={(e) => {
-                        setSearchPoType(e.target.value);
+                        setSearchInwardType(e.target.value);
                       }}
                     />
                   </th>
@@ -310,9 +291,9 @@ const PurchaseInwardFormReport = ({
                       type="text"
                       className="text-black h-5   w-full   px-1 focus:outline-none border  border-gray-400 rounded-md"
                       placeholder="Search"
-                      value={supplier}
+                      value={searchSupplier}
                       onChange={(e) => {
-                        setSupplier(e.target.value);
+                        setSearchSupplier(e.target.value);
                       }}
                     />
                   </th>
@@ -352,16 +333,13 @@ const PurchaseInwardFormReport = ({
                         <td className="py-1.5 text-left">
                           {getDateFromDateTimeToDisplay(dataObj.docDate)}
                         </td>
-                        <td className="py-1.5 text-left">
-                          {getDateFromDateTimeToDisplay(dataObj.dueDate)}
-                        </td>
                         <td className="py-1.5 text-left  ">
-                          {dataObj.poType}{" "}
+                          {dataObj.inwardType}{" "}
                         </td>
 
                         <td className="py-1.5 text-left">
                           {" "}
-                          {dataObj?.Supplier?.name}
+                          {dataObj?.supplier?.name}
                         </td>
                         {rowActions && (
                           <td className=" w-[30px] border-gray-200 gap-1 px-2   h-8 justify-end">

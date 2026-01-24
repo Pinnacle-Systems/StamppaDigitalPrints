@@ -82,7 +82,7 @@ const PoItems = ({
   };
 
   const handleDeleteAllRows = () => {
-    setPoItems(Array.from({ length: 5 }, () => ({ ...EMPTY_ROW })));
+    setPoItems(Array.from({ length: 4 }, () => ({ ...EMPTY_ROW })));
   };
 
   const handleRightClick = (event, rowIndex, type) => {
@@ -118,7 +118,7 @@ const PoItems = ({
 
   useEffect(() => {
     setPoItems((prev) => {
-      const requiredRows = 5;
+      const requiredRows = 4;
 
       // CREATE MODE
       if (!id) {
@@ -188,12 +188,12 @@ const PoItems = ({
           isNewVersion={isNewVersion}
         />
       </Modal>
-      <div className="border border-slate-200 px-2 bg-white rounded-md shadow-sm max-h-[450px] overflow-auto  w-full">
+      <div className="border border-slate-200 px-2 bg-white rounded-md shadow-sm max-h-[230px] overflow-auto  w-full">
         <div className="flex justify-between items-center my-2">
           <h2 className="font-medium text-slate-700">List Of Items</h2>
         </div>
         <div
-          className={`w-full min-h-[200px] max-h-[250px] overflow-y-auto  my-2`}
+          className={`w-full min-h-[180px] max-h-[180px] overflow-y-auto  my-1`}
         >
           <table className=" border-collapse table-fixed">
             <thead className="bg-gray-200 text-gray-800 sticky top-0 z-10">
@@ -209,7 +209,7 @@ const PoItems = ({
                   Description of Goods
                 </th>
                 <th
-                  className={`w-28 px-4 py-2 text-center font-medium text-[13px]`}
+                  className={`w-32 px-4 py-2 text-center font-medium text-[13px]`}
                 >
                   HSN/SAC
                 </th>
@@ -230,12 +230,12 @@ const PoItems = ({
                   Price
                 </th>
                 <th
-                  className={`w-24 px-1 py-2 text-center font-medium text-[13px] `}
+                  className={`w-28 px-1 py-2 text-center font-medium text-[13px] `}
                 >
                   Gross
                 </th>
                 <th
-                  className={`w-16 px-1 py-2 text-center font-medium text-[13px] `}
+                  className={`w-24 px-1 py-2 text-center font-medium text-[13px] `}
                 >
                   Tax Details
                 </th>

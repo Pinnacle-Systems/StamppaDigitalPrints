@@ -16,7 +16,7 @@ export const EMPLOYEE_CATEGORY_API = "employeeCategories";
 export const LOCATION_API = "location";
 export const PARTY_CATEGORY_API = "partyCategories"
 export const PAYMENT_API = "payments"
-
+export const PURCHASE_INWARD_ENTRY_API = "purchaseInwardEntry";
 export const PARTY_API = "party"
 export const PRODUCT_BRAND_API = "productBrand"
 export const PRODUCT_CATEGORY_API = "productCategory"

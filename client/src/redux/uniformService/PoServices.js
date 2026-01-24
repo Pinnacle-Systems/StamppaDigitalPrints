@@ -36,7 +36,7 @@ const PoApi = createApi({
     getPoItems: builder.query({
       query: ({ params }) => {
         return {
-          url: `${PO_API}/getPoItems`,
+          url: `${PO_API}/getPoItemsDetails`,
           method: "GET",
           headers: {
             "Content-type": "application/json; charset=UTF-8",

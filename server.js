@@ -36,7 +36,8 @@ import {
   po,
   termsAndCondition,
   payTerm,
-  location
+  location,
+  purchaseInwardEntry
 } from './src/routes/index.js';
 
 import { socketMain } from './src/sockets/socket.js';
@@ -100,7 +101,7 @@ app.use("/product", product);
 app.use("/purchaseBill", purchaseBill);
 app.use("/OpeningStock", OpeningStock);
 app.use("/color", color);
-
+app.use("/purchaseInwardEntry", purchaseInwardEntry);
 app.use("/stock", stock);
 app.use("/salesBill", salesBill);
 app.use("/purchaseReturn", purchaseReturn)

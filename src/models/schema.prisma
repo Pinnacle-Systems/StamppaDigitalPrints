@@ -167,6 +167,8 @@ model User {
   poUpdatedBy              Po[]              @relation(name: "updatedBy")
   purchaseInwardsCreatedBy PurchaseInward[]  @relation(name: "createdBy")
   purchaseInwardsUpdatedBy PurchaseInward[]  @relation(name: "updatedBy")
+  stocksCreatedBy          Stock[]           @relation(name: "createdBy")
+  stocksUpdatedBy          Stock[]           @relation(name: "updatedBy")
 }
 
 model Employee {
@@ -679,6 +681,15 @@ model Stock {
   styleItemId         Int?
   Hsn                 Hsn?               @relation(fields: [hsnId], references: [id])
   hsnId               Int?
+  inwardType          String?
+  updatedAt           DateTime?          @updatedAt
+  createdBy           User?              @relation("createdBy", fields: [createdById], references: [id])
+  createdById         Int?
+  updatedBy           User?              @relation("updatedBy", fields: [updatedById], references: [id])
+  updatedById         Int?
+  processName         String?
+  Store               Location?          @relation(fields: [storeId], references: [id])
+  storeId             Int?
 }
 
 model SalesBill {
@@ -1104,6 +1115,7 @@ model Po {
   quoteVersions    QuoteVersion[]
   PayTerm          PayTerm?            @relation(fields: [payTermId], references: [id])
   payTermId        Int?
+  inwardItems      InwardItems[]
 }
 
 model QuoteVersion {
@@ -1173,6 +1185,9 @@ model PurchaseInward {
   remarks     String?       @db.LongText
   inwardItems InwardItems[]
   inwardType  String?
+  Store       Location?     @relation(fields: [storeId], references: [id])
+  storeId     Int?
+  locationId  Int?
 }
 
 model InwardItems {
@@ -1188,18 +1203,23 @@ model InwardItems {
   poQty            Float?
   inwardQty        Float?
   stocks           Stock[]
+  inwardType       String?
+  Po               Po?             @relation(fields: [poId], references: [id], onDelete: Cascade)
+  poId             Int?
 }
 
 model Location {
-  id          Int     @id @default(autoincrement())
-  storeName   String
-  Location    Branch  @relation(fields: [locationId], references: [id])
-  locationId  Int
-  isFabric    Boolean @default(true)
-  isYarn      Boolean @default(true)
-  isAccessory Boolean @default(true)
-  isGarments  Boolean @default(true)
-  active      Boolean @default(true)
-  Company     Company @relation(fields: [companyId], references: [id])
-  companyId   Int
+  id              Int              @id @default(autoincrement())
+  storeName       String
+  Location        Branch           @relation(fields: [locationId], references: [id])
+  locationId      Int
+  isFabric        Boolean          @default(true)
+  isYarn          Boolean          @default(true)
+  isAccessory     Boolean          @default(true)
+  isGarments      Boolean          @default(true)
+  active          Boolean          @default(true)
+  Company         Company          @relation(fields: [companyId], references: [id])
+  companyId       Int
+  purchaseInwards PurchaseInward[]
+  stocks          Stock[]
 }
