@@ -7,20 +7,20 @@ import { toast } from "react-toastify";
 import Modal from "../../../UiComponents/Modal";
 import TaxDetailsFullTemplate from "../TaxDetailsCompleteTemplate";
 import { useMemo } from "react";
-import PoItemsSelection from "./PoItemsSelection";
+import PurchaseInwardItemsSelection from "./PurchaseInwardItemsSelection";
 import { useLazyGetStyleItemMasterByIdQuery } from "../../../redux/services/StyleItemMasterService";
 
-const InwardItems = ({
+const ReturnItems = ({
   id,
-  inwardItems,
-  setInwardItems,
+  returnItems,
+  setReturnItems,
   readOnly,
   params,
   styleItemList,
   uomList,
   hsnList,
   taxTemplateId,
-  inwardType,
+  returnType,
   supplierId,
   branchId,
 }) => {
@@ -28,9 +28,10 @@ const InwardItems = ({
     styleItemId: "",
     hsnId: "",
     uomId: "",
-    inwardQty: "",
+    returnQty: "",
     poQty: "",
-    poId: "",
+    balQty:"",
+    purchaseInwardId: "",
   };
   const [contextMenu, setContextMenu] = useState(null);
   const [currentSelectedIndex, setCurrentSelectedIndex] = useState(null);
@@ -40,21 +41,21 @@ const InwardItems = ({
       styleItemId: "",
       hsnId: "",
       uomId: "",
-      inwardQty: "",
+      returnQty: "",
       poQty: "",
-      poId: "",
+      purchaseInwardId: "",
     };
-    setInwardItems([...inwardItems, newRow]);
+    setReturnItems([...returnItems, newRow]);
   };
   const [triggerGetStyleItem, { data: styleData }] =
     useLazyGetStyleItemMasterByIdQuery();
   const handleInputChange = async (value, index, field) => {
     // clone first
-    const newRows = structuredClone(inwardItems);
+    const newRows = structuredClone(returnItems);
     if (field === "styleItemId") {
       // 1️⃣ update immediately
       newRows[index].styleItemId = value;
-      setInwardItems([...newRows]); // 🔥 maintain UI instantly
+      setReturnItems([...newRows]); // 🔥 maintain UI instantly
 
       try {
         // 2️⃣ fetch style data
@@ -63,7 +64,7 @@ const InwardItems = ({
         // 3️⃣ update fabricId
         newRows[index].hsnId = response?.data?.hsnId;
         // 4️⃣ update again after API fetch
-        setInwardItems([...newRows]);
+        setReturnItems([...newRows]);
       } catch (e) {
         console.error("Style fetch failed", e);
       }
@@ -72,10 +73,10 @@ const InwardItems = ({
     }
     // normal fields
     newRows[index][field] = value;
-    setInwardItems([...newRows]);
+    setReturnItems([...newRows]);
   };
   const deleteRow = (id) => {
-    setInwardItems((currentRows) => {
+    setReturnItems((currentRows) => {
       if (currentRows.length > 1) {
         return currentRows.filter((row, index) => index !== parseInt(id));
       }
@@ -84,7 +85,7 @@ const InwardItems = ({
   };
 
   const handleDeleteAllRows = () => {
-    setInwardItems(Array.from({ length: 4 }, () => ({ ...EMPTY_ROW })));
+    setReturnItems(Array.from({ length: 3 }, () => ({ ...EMPTY_ROW })));
   };
 
   const handleRightClick = (event, rowIndex, type) => {
@@ -102,7 +103,7 @@ const InwardItems = ({
   };
 
   const deleteSelectedRows = () => {
-    setInwardItems((rows) =>
+    setReturnItems((rows) =>
       rows.filter((r) => !(r.selected && (r.stockQty ?? 0) === 0)),
     );
     setContextMenu(null);
@@ -110,23 +111,23 @@ const InwardItems = ({
 
   useEffect(() => {
     // If edit mode (id exists)
-    if (id && inwardItems?.length > 0) {
-      const requiredRows = 4;
-      const missingRows = requiredRows - inwardItems.length;
+    if (id && returnItems?.length > 0) {
+      const requiredRows = 3;
+      const missingRows = requiredRows - returnItems.length;
 
       if (missingRows > 0) {
-        setInwardItems([
-          ...inwardItems,
+        setReturnItems([
+          ...returnItems,
           ...Array.from({ length: missingRows }, () => ({ ...EMPTY_ROW })),
         ]);
       }
     }
 
     // If create mode (no id)
-    if (!id && (!inwardItems || inwardItems.length === 0)) {
-      setInwardItems(Array.from({ length: 4 }, () => ({ ...EMPTY_ROW })));
+    if (!id && (!returnItems || returnItems.length === 0)) {
+      setReturnItems(Array.from({ length: 3 }, () => ({ ...EMPTY_ROW })));
     }
-  }, [id, inwardItems]);
+  }, [id, returnItems]);
 
   return (
     <>
@@ -139,7 +140,7 @@ const InwardItems = ({
           taxTypeId={taxTemplateId}
           currentIndex={currentSelectedIndex}
           setCurrentSelectedIndex={setCurrentSelectedIndex}
-          inwardItems={inwardItems}
+          returnItems={returnItems}
           handleInputChange={handleInputChange}
         />
       </Modal>
@@ -148,45 +149,44 @@ const InwardItems = ({
         onClose={() => setFillGrid(false)}
         widthClass={"w-[95%]"}
       >
-        <PoItemsSelection
+        <PurchaseInwardItemsSelection
           setFillGrid={setFillGrid}
           supplierId={supplierId}
-          inwardItems={inwardItems}
-          setInwardItems={setInwardItems}
+          returnItems={returnItems}
+          setReturnItems={setReturnItems}
           branchId={branchId}
         />
       </Modal>
       <div className="border border-slate-200 px-2 bg-white rounded-md shadow-sm max-h-[230px] overflow-auto  w-full">
         <div className="flex items-center my-2">
           <h2 className="font-medium text-slate-700">List Of Items</h2>
-          {inwardType !== "Direct Inward" && (
-            <button
-              className="font-bold text-slate-700 bord ml-[720px] text-sm bg-blue-500 rounded rounded-md text-white px-2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  setFillGrid(true);
-                }
-              }}
-              onClick={() => {
-                if (!supplierId) {
-                  Swal.fire({
-                    icon: "success",
-                    title: ` Choose Supplier`,
-                    showConfirmButton: false,
-                    timer: 2000,
-                  });
-                } else {
-                  setFillGrid(true);
-                }
-              }}
-            >
-              Fill Po Items
-            </button>
-          )}
+
+          <button
+            className="font-bold text-slate-700 bord ml-[700px] text-sm bg-blue-500 rounded rounded-md text-white px-2"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                setFillGrid(true);
+              }
+            }}
+            onClick={() => {
+              if (!supplierId) {
+                Swal.fire({
+                  icon: "success",
+                  title: ` Choose Supplier`,
+                  showConfirmButton: false,
+                  timer: 2000,
+                });
+              } else {
+                setFillGrid(true);
+              }
+            }}
+          >
+            Fill Inward Items
+          </button>
         </div>
         <div
-          className={`w-full min-h-[180px] max-h-[180px] overflow-y-auto  my-2`}
+          className={`w-full min-h-[160px] max-h-[160px] overflow-y-auto  my-2`}
         >
           <table className=" border-collapse table-fixed">
             <thead className="bg-gray-200 text-gray-800 sticky top-0 z-10">
@@ -211,18 +211,20 @@ const InwardItems = ({
                 >
                   UOM
                 </th>
-                {inwardType !== "Direct Inward" && (
-                  <th
-                    className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
-                  >
-                    Order Qty
-                  </th>
-                )}
-
                 <th
                   className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
                 >
-                  Inward Qty
+                  PO Qty
+                </th>
+                <th
+                  className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
+                >
+                  Balance Qty
+                </th>
+                <th
+                  className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
+                >
+                  Return Qty
                 </th>
                 <th
                   className={`w-20 px-1 py-2 text-center font-medium text-[13px] `}
@@ -232,7 +234,7 @@ const InwardItems = ({
               </tr>
             </thead>
             <tbody>
-              {(inwardItems ? inwardItems : [])?.map((row, index) => (
+              {(returnItems ? returnItems : [])?.map((row, index) => (
                 <tr
                   className="border border-blue-gray-200 cursor-pointer "
                   key={index}
@@ -253,7 +255,7 @@ const InwardItems = ({
                           label: item.name,
                           value: item.id,
                         }))}
-                      readOnly={readOnly || inwardType !== "Direct Inward"}
+                      readOnly={true}
                       placeholder=""
                       onBlur={() =>
                         handleInputChange(row.styleItemId, index, "styleItemId")
@@ -275,7 +277,7 @@ const InwardItems = ({
                           label: item.name,
                           value: item.id,
                         }))}
-                      readOnly={readOnly || inwardType !== "Direct Inward"}
+                      readOnly={true}
                       placeholder=""
                       onBlur={() =>
                         handleInputChange(row.hsnId, index, "hsnId")
@@ -297,7 +299,7 @@ const InwardItems = ({
                           label: item.name,
                           value: item.id,
                         }))}
-                      readOnly={readOnly || inwardType !== "Direct Inward"}
+                      readOnly={true}
                       placeholder=""
                       onBlur={() =>
                         handleInputChange(row.uomId, index, "uomId")
@@ -309,61 +311,70 @@ const InwardItems = ({
                       }}
                     />
                   </td>
-                  {inwardType !== "Direct Inward" && (
-                    <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
-                      <input
-                        onKeyDown={(e) => {
-                          if (e.code === "Minus" || e.code === "NumpadSubtract")
-                            e.preventDefault();
-                          if (e.key === "Delete") {
-                            handleInputChange("", index, "poQty");
-                          }
-                        }}
-                        min={"0"}
-                        type="number"
-                        className="text-right rounded py-1 px-1 w-full table-data-input"
-                        onFocus={(e) => e.target.select()}
-                        value={row?.poQty}
-                        onChange={(e) =>
-                          handleInputChange(e.target.value, index, "poQty")
-                        }
-                        onBlur={(e) => {
-                          handleInputChange(e.target.value, index, "poQty");
-                        }}
-                        disabled={
-                          readOnly ||
-                          (row.stockQty ?? 0) > 0 ||
-                          inwardType !== "Direct Inward"
-                        }
-                      />
-                    </td>
-                  )}
                   <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
                     <input
-                      id={`inwardQty-input-${index}`}
                       onKeyDown={(e) => {
                         if (e.code === "Minus" || e.code === "NumpadSubtract")
                           e.preventDefault();
                         if (e.key === "Delete") {
-                          handleInputChange("", index, "inwardQty");
+                          handleInputChange("", index, "poQty");
+                        }
+                      }}
+                      min={"0"}
+                      type="number"
+                      className="text-right rounded py-1 px-1 w-full table-data-input"
+                      onFocus={(e) => e.target.select()}
+                      value={row?.poQty}
+                      onChange={(e) =>
+                        handleInputChange(e.target.value, index, "poQty")
+                      }
+                      onBlur={(e) => {
+                        handleInputChange(e.target.value, index, "poQty");
+                      }}
+                      disabled={true}
+                    />
+                  </td>
+                  <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
+                    <input
+                      onKeyDown={(e) => {
+                        if (e.code === "Minus" || e.code === "NumpadSubtract")
+                          e.preventDefault();
+                        if (e.key === "Delete") {
+                          handleInputChange("", index, "balQty");
+                        }
+                      }}
+                      min={"0"}
+                      type="number"
+                      className="text-right rounded py-1 px-1 w-full table-data-input"
+                      onFocus={(e) => e.target.select()}
+                      value={row?.balQty}
+                      onChange={(e) =>
+                        handleInputChange(e.target.value, index, "balQty")
+                      }
+                      onBlur={(e) => {
+                        handleInputChange(e.target.value, index, "balQty");
+                      }}
+                      disabled={true}
+                    />
+                  </td>
+                  <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
+                    <input
+                      id={`returnQty-input-${index}`}
+                      onKeyDown={(e) => {
+                        if (e.code === "Minus" || e.code === "NumpadSubtract")
+                          e.preventDefault();
+                        if (e.key === "Delete") {
+                          handleInputChange("", index, "returnQty");
                         }
                         if (e.key === "Enter") {
                           e.preventDefault(); // prevent form submit or line break
                           e.stopPropagation();
-                          if (inwardType !== "Direct Inward") {
-                            const nextQtyInput = document.querySelector(
-                              `#inwardQty-input-${index + 1}`,
-                            );
-                            if (nextQtyInput) {
-                              nextQtyInput.focus();
-                            }
-                          } else {
-                            const nextQtyInput = document.querySelector(
-                              `#styleItemId-input-${index + 1}`,
-                            );
-                            if (nextQtyInput) {
-                              nextQtyInput.focus();
-                            }
+
+                          const nextQtyInput = document.querySelector(
+                            `#returnQty-input-${index + 1}`,
+                          );
+                          if (nextQtyInput) {
+                            nextQtyInput.focus();
                           }
                         }
                       }}
@@ -371,24 +382,24 @@ const InwardItems = ({
                       type="number"
                       className="text-right rounded py-1 px-1 w-full table-data-input"
                       onFocus={(e) => e.target.select()}
-                      value={row?.inwardQty}
+                      value={row?.returnQty}
                       onChange={(e) =>
-                        handleInputChange(e.target.value, index, "inwardQty")
+                        handleInputChange(e.target.value, index, "returnQty")
                       }
                       onBlur={(e) => {
-                        const minQty = row.poQty;
-                        if (inwardType !== "Direct Inward") {
-                          if (parseFloat(minQty) < parseFloat(e.target.value)) {
-                            e.target.value = "";
-                            Swal.fire({
-                              icon: "warning",
-                              title: "Invalid Qty",
-                              text: `Inward Qty cannot be More than Order Qty! - ${minQty}`,
-                              confirmButtonText: "OK",
-                            });
-                            return;
-                          }
+                        const minQty = row.balQty;
+
+                        if (parseFloat(minQty) < parseFloat(e.target.value)) {
+                          e.target.value = "";
+                          Swal.fire({
+                            icon: "warning",
+                            title: "Invalid Qty",
+                            text: `Return Qty cannot be More than Balance Qty! - ${minQty}`,
+                            confirmButtonText: "OK",
+                          });
+                          return;
                         }
+
                         if (e.target.value == 0) {
                           e.target.value = "";
                           Swal.fire({
@@ -399,7 +410,7 @@ const InwardItems = ({
                           });
                           return;
                         }
-                        handleInputChange(e.target.value, index, "inwardQty");
+                        handleInputChange(e.target.value, index, "returnQty");
                       }}
                       disabled={readOnly || (row.stockQty ?? 0) > 0}
                     />
@@ -429,19 +440,19 @@ const InwardItems = ({
               <tr className="bg-gray-50 h-7 font-medium text-gray-800">
                 <td
                   className="text-right px-4 border border-gray-300 font-medium text-[13px] py-0.5"
-                  colSpan={inwardType === "Direct Inward" ? 3 : 4}
+                  colSpan={returnType === "Direct Inward" ? 3 : 4}
                 >
                   Total
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {inwardItems
+                  {returnItems
                     ?.reduce((sum, row) => sum + (Number(row.poQty) || 0), 0)
                     .toFixed(2)}
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {inwardItems
+                  {returnItems
                     ?.reduce(
-                      (sum, row) => sum + (Number(row.inwardQty) || 0),
+                      (sum, row) => sum + (Number(row.returnQty) || 0),
                       0,
                     )
                     .toFixed(2)}
@@ -493,4 +504,4 @@ const InwardItems = ({
   );
 };
 
-export default InwardItems;
+export default ReturnItems;

@@ -925,6 +925,219 @@ async function getPurchaseDetailStock(req) {
   };
 }
 
+function manualFilterSearchDataPurchaseInwardItems(
+  searchDocDate,
+  searchDcDate,
+  searchInwardType,
+  data,
+) {
+  return data.filter(
+    (item) =>
+      (searchDocDate
+        ? String(getDateFromDateTime(item.PurchaseInward.docDate)).includes(
+            searchDocDate,
+          )
+        : true) &&
+      (searchDcDate
+        ? String(getDateFromDateTime(item.PurchaseInward.dcDate)).includes(
+            searchDcDate,
+          )
+        : true) &&
+      (searchInwardType
+        ? item.PurchaseInward.inwardType
+            .toLowerCase()
+            .includes(searchInwardType.toLowerCase())
+        : true),
+  );
+}
+
+async function getAllDataPurInwardItems(data) {
+  let promises = data?.map(async (item) => {
+    let data = await getPurInwardItemById(item.id);
+    return data.data;
+  });
+  return Promise.all(promises);
+}
+
+async function getPurInwardItemById(id) {
+  let data = await prisma.inwardItems.findUnique({
+    where: {
+      id: parseInt(id),
+    },
+    include: {
+      PurchaseInward: {
+        select: {
+          docId: true,
+          dcDate: true,
+          docDate: true,
+        },
+      },
+      Uom: {
+        select: {
+          name: true,
+        },
+      },
+      StyleItem: {
+        select: {
+          name: true,
+        },
+      },
+      Hsn: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+  if (!data) return NoRecordFound("Purchase Inward");
+  const itemWithPoQty = await prisma.poItems.findFirst({
+    where: {
+      styleItemId: data.styleItemId,
+      poId: data.poId,
+      uomId: data.uomId,
+      hsnId: data.hsnId,
+    },
+  });
+  //  const totalStkQty = await prisma.stock.aggregate({
+  //       where: {
+  //         styleId: item.styleId,
+  //         sizeId: item.sizeId,
+  //         colorId: item.colorId,
+  //         storeId: data.storeId,
+  //         styleItemId: item.styleItemId,
+  //         fabricId: item.fabricId,
+  //       },
+  //       _sum: {
+  //         qty: true,
+  //       },
+  //     });
+
+  return {
+    statusCode: 0,
+    data: {
+      ...data,
+      poQty: itemWithPoQty.qty,
+    },
+  };
+}
+
+async function getPurchaseInwardItems(req) {
+  const {
+    branchId,
+    active,
+    supplierId,
+    pagination,
+    dataPerPage,
+    searchDocId,
+    searchDocDate,
+    searchInwardType,
+    searchDcDate,
+  } = req.query;
+
+  let data;
+  let totalCount;
+  if (pagination) {
+    data = await prisma.inwardItems.findMany({
+      where: {
+        PurchaseInward: {
+          docId: Boolean(searchDocId)
+            ? {
+                contains: searchDocId,
+              }
+            : undefined,
+          supplierId: supplierId ? parseInt(supplierId) : undefined,
+        },
+      },
+      include: {
+        PurchaseInward: {
+          select: {
+            supplierId: true,
+            docDate: true,
+            dcDate: true,
+            inwardType: true,
+          },
+        },
+
+        Uom: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+    data = manualFilterSearchDataPurchaseInwardItems(
+      searchDocDate,
+      searchDcDate,
+      searchInwardType,
+      data,
+    );
+
+    data = data?.filter((i) => i.PurchaseInward.supplierId == supplierId);
+
+    data = await getAllDataPurInwardItems(data);
+    // if (isPurchaseInwardFilter) {
+    //   data = data.filter(
+    //     (item) =>
+    //       parseFloat(
+    //         balanceQtyCalculation(
+    //           item?.qty,
+    //           item?.alreadyCancelData?._sum?.qty,
+    //           item?.alreadyInwardedData?._sum?.qty,
+    //           item?.alreadyReturnedData?._sum?.qty,
+    //         ),
+    //       ) > 0,
+    //   );
+
+    //   data = data?.filter((j) => parseFloat(j.balanceQty) > 0);
+    // }
+
+    // if (isPurchaseCancelFilter) {
+    //   data = data.filter(
+    //     (item) =>
+    //       parseFloat(
+    //         balanceCancelQtyCalculation(
+    //           item?.qty,
+    //           item?.alreadyCancelData?._sum?.qty,
+    //           item?.alreadyInwardedData?._sum?.qty,
+    //           item?.alreadyReturnedData?._sum?.qty,
+    //         ),
+    //       ) > 0,
+    //   );
+    // }
+    // if (isPurchaseReturnFilter) {
+    //   // data = data.filter(item => substract(item.alreadyInwardedData?._sum?.qty ? item.alreadyInwardedData._sum.qty : 0, item.alreadyReturnedData?._sum?.qty ? item.alreadyReturnedData?._sum?.qty : 0) > 0)
+
+    //   data = data.filter((item) => {
+    //     const poQty = item?.qty || 0;
+    //     const inwardQty = item?.alreadyInwardedData?._sum?.qty || 0;
+    //     const returnQty = item?.alreadyReturnedData?._sum?.qty || 0;
+    //     const cancelQty = item?.alreadyCancelData?._sum?.qty || 0;
+
+    //     const balance = parseFloat(substract(inwardQty, returnQty));
+
+    //     // log for debugging
+    //     console.log({
+    //       itemId: item?.id,
+    //       poQty,
+    //       inwardQty,
+    //       returnQty,
+    //     });
+
+    //     // keep only if positive balance
+    //     return balance > 0;
+    //   });
+    // }
+  } else {
+    data = await prisma.inwardItems.findMany({
+      where: {
+        branchId: branchId ? parseInt(branchId) : undefined,
+        active: active ? Boolean(active) : undefined,
+      },
+    });
+  }
+  return { statusCode: 0, data, totalCount };
+}
+
 export {
   get,
   getOne,
@@ -933,4 +1146,5 @@ export {
   remove,
   getPurchaseDetail,
   getPurchaseDetailStock,
+  getPurchaseInwardItems,
 };

@@ -6,12 +6,12 @@ import {
   update as _update,
   remove as _remove,
   getPurchaseDetailStock as _getPurchaseDetail,
+  getPurchaseInwardItems as _getPurInwardItems,
 } from "../services/purchaseInward.service.js";
 
 async function get(req, res, next) {
   try {
     res.json(await _get(req));
-    console.log(res.statusCode);
   } catch (err) {
     console.error(`Error `, err.message);
   }
@@ -20,7 +20,6 @@ async function get(req, res, next) {
 async function getOne(req, res, next) {
   try {
     res.json(await _getOne(req.params.id));
-    console.log(res.statusCode);
   } catch (err) {
     console.error(`Error`, err.message);
   }
@@ -28,7 +27,6 @@ async function getOne(req, res, next) {
 async function create(req, res, next) {
   try {
     res.json(await _create(req));
-    console.log(res.statusCode);
   } catch (error) {
     console.error(`Error`, error.message);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -50,7 +48,6 @@ async function create(req, res, next) {
 async function update(req, res, next) {
   try {
     res.json(await _update(req.params.id, req.body));
-    console.log(res.statusCode);
   } catch (error) {
     console.error(`Error`, error.message);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -73,7 +70,6 @@ async function update(req, res, next) {
 async function remove(req, res, next) {
   try {
     res.json(await _remove(req.params.id));
-    console.log(res.statusCode);
   } catch (error) {
     if (error.code === "P2025") {
       res.statusCode = 200;
@@ -90,10 +86,25 @@ async function remove(req, res, next) {
 async function getPurchaseDetail(req, res, next) {
   try {
     res.json(await _getPurchaseDetail(req));
-    console.log(res.statusCode);
   } catch (err) {
     console.error(`Error`, err.message);
   }
 }
 
-export { get, getOne, create, update, remove, getPurchaseDetail };
+async function getPurInwardItems(req, res, next) {
+  try {
+    res.json(await _getPurInwardItems(req));
+  } catch (err) {
+    console.error(`Error`, err.message);
+  }
+}
+
+export {
+  get,
+  getOne,
+  create,
+  update,
+  remove,
+  getPurchaseDetail,
+  getPurInwardItems,
+};

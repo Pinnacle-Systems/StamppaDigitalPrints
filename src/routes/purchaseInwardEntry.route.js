@@ -7,12 +7,13 @@ import {
   update,
   remove,
   getPurchaseDetail,
+  getPurInwardItems
 } from "../controllers/purchaseInwardEntry.controller.js";
-import { multerUploadForGrid } from "../utils/multerUpload.js";
 
 router.post("/", create);
 
 router.get("/", get);
+router.get('/purInwardItemDetails', getPurInwardItems);
 router.get("/purchaseDetail", getPurchaseDetail);
 
 router.put("/:id", update);

@@ -14,7 +14,6 @@ async function get(req, res, next) {
 async function getOne(req, res, next) {
     try {
         res.json(await _getOne(req.params.id));
-        console.log(res.statusCode);
     } catch (err) {
         console.error(`Error`, err.message);
     }
@@ -34,7 +33,6 @@ async function getOne(req, res, next) {
 async function getSearch(req, res, next) {
     try {
         res.json(await _getSearch(req));
-        console.log(res.statusCode);
     } catch (err) {
         console.error(`Error`, err.message);
     }
@@ -43,7 +41,6 @@ async function getSearch(req, res, next) {
 async function create(req, res, next) {
     try {
         res.json(await _create(req.body));
-        console.log(res.statusCode);
     } catch (error) {
         console.error(`Error`, (error?.message)?.match(/message: "(.*?)"/)?.[1] || error?.message);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -61,7 +58,6 @@ async function create(req, res, next) {
 async function update(req, res, next) {
     try {
         res.json(await _update(req.params.id, req.body));
-        console.log(res.statusCode);
     } catch (error) {
         console.error(`Error`, (error?.message)?.match(/message: "(.*?)"/)?.[1] || error?.message);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {

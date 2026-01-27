@@ -88,6 +88,11 @@ export const inwardTypes = [
   { show: "Direct Inward", value: "Direct Inward" },
 ];
 
+export const returnTypes = [
+  { show: "General Return", value: "General Return" },
+  { show: "Purchase Return", value: "Purchase Return" },
+];
+
 export const inwardTypeOptions = [
   { show: "Against Po", value: "AgainstPo" },
   { show: "Direct Inward", value: "DirectInward" },
