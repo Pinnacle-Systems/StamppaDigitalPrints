@@ -3,10 +3,11 @@ import { NoRecordFound } from "../configs/Responses.js";
 import {
   exclude,
   getDateFromDateTime,
-  getDateTimeRangeForCurrentYear,
+  getYearShortCodeForFinYear,
   getYearShortCode,
 } from "../utils/helper.js";
 import { getTableRecordWithId } from "../utils/helperQueries.js";
+import { getFinYearStartTimeEndTime } from "../utils/finYearHelper.js";
 
 const prisma = new PrismaClient();
 
@@ -113,11 +114,11 @@ async function getNextDocId(
   }
 }
 
-function manualFilterSearchData(searchBillDate, data) {
+function manualFilterSearchData(searchDocDate, data) {
   return data.filter(
     (item) =>
-      searchBillDate
-        ? String(getDateFromDateTime(item.createdAt)).includes(searchBillDate)
+      searchDocDate
+        ? String(getDateFromDateTime(item.docDate)).includes(searchDocDate)
         : true,
     // (searchSupplierDcDate ? String(getDateFromDateTime(item.dueDate)).includes(searchSupplierDcDate) : true)
     // (searchPurchaseBillNo ?String(item.purchaseBillId).includes(searchPurchaseBillNo) : true)
@@ -126,33 +127,39 @@ function manualFilterSearchData(searchBillDate, data) {
 
 async function get(req) {
   const {
-    companyId,
-    active,
     branchId,
+    active,
     pagination,
     pageNumber,
     dataPerPage,
-    searchDocId,
-    searchBillDate,
-    searchSupplierName,
+    serachDocNo,
+    searchDocDate,
+    searchSupplier,
   } = req.query;
-  let data = await prisma.purchaseReturn.findMany({
+  let data = await prisma.purchaseInwardReturn.findMany({
     where: {
-      companyId: companyId ? parseInt(companyId) : undefined,
+      branchId: branchId ? parseInt(branchId) : undefined,
       active: active ? Boolean(active) : undefined,
-      docId: Boolean(searchDocId)
+      docId: Boolean(serachDocNo)
         ? {
-            contains: searchDocId,
+            contains: serachDocNo,
           }
         : undefined,
       supplier: {
-        name: Boolean(searchSupplierName)
-          ? { contains: searchSupplierName }
+        name: Boolean(searchSupplier)
+          ? { contains: searchSupplier }
           : undefined,
       },
     },
+    include: {
+      supplier: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
-  data = manualFilterSearchData(searchBillDate, data);
+  data = manualFilterSearchData(searchDocDate, data);
   const totalCount = data.length;
 
   if (pagination) {
@@ -167,57 +174,53 @@ async function get(req) {
 
 async function getOne(id) {
   const childRecord = 0;
-  const data = await prisma.purchaseReturn.findUnique({
+  const data = await prisma.purchaseInwardReturn.findUnique({
     where: {
       id: parseInt(id),
     },
     include: {
-      PoReturnItems: {
-        select: {
-          id: true,
-          Product: {
-            select: {
-              name: true,
-              ProductBrand: {
-                select: {
-                  name: true,
-                },
-              },
-              ProductCategory: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-          Uom: {
-            select: {
-              name: true,
-            },
-          },
-          uomId: true,
-          qty: true,
-          poQty: true,
-          stockQty: true,
-          purchaseBillItemsId: true,
-        },
-      },
+      purchaseReturnItems: true,
     },
   });
   if (!data) return NoRecordFound("purchaseReturn");
-  data["PoReturnItems"] = await (async function getReturnQty() {
-    const promises = data["PoReturnItems"].map(async (i) => {
-      const sql = `
-            SELECT COALESCE(SUM(QTY),0) as returnQty FROM PoReturnItems WHERE purchaseBillItemsId=${i.purchaseBillItemsId}
-            `;
-      console.log(sql);
-      let returnQty = await prisma.$queryRawUnsafe(sql);
-      i["alreadyReturnQty"] = returnQty[0]["returnQty"];
-      return i;
-    });
-    return Promise.all(promises);
-  })();
-  return { statusCode: 0, data: { ...data, ...{ childRecord } } };
+  const itemWithPoQty = await Promise.all(
+    data.purchaseReturnItems.map(async (item) => {
+      const poQty = await prisma.poItems.findFirst({
+        where: {
+          styleItemId: item.styleItemId,
+          poId: item.poId,
+          uomId: item.uomId,
+          hsnId: item.hsnId,
+        },
+        select: {
+          qty: true,
+        },
+      });
+      const stkQty = await prisma.stock.aggregate({
+        where: {
+          styleItemId: item.styleItemId,
+          uomId: item.uomId,
+          hsnId: item.hsnId,
+        },
+        _sum: {
+          qty: true,
+        },
+      });
+      return {
+        ...item,
+        balQty: stkQty._sum.qty + item.returnQty,
+        poQty: poQty.qty,
+      };
+    }),
+  );
+  return {
+    statusCode: 0,
+    data: {
+      ...data,
+      purchaseReturnItems: itemWithPoQty,
+      ...{ childRecord },
+    },
+  };
 }
 
 async function getSearch(req) {
@@ -239,7 +242,7 @@ async function getSearch(req) {
   return { statusCode: 0, data: data };
 }
 
-async function create(req) {
+async function create(body) {
   const {
     userId,
     branchId,
@@ -256,7 +259,7 @@ async function create(req) {
     draftSave,
     locationId,
     invNo,
-  } = await req.body;
+  } = await body;
   let finYearDate = await getFinYearStartTimeEndTime(finYearId);
   const shortCode = finYearDate
     ? getYearShortCodeForFinYear(
@@ -347,10 +350,11 @@ async function createReturnItems(
           : null,
         uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
         hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
-        qty:  stockDetail?.returnQty && !isNaN(parseFloat(stockDetail.returnQty))
+        qty:
+          stockDetail?.returnQty && !isNaN(parseFloat(stockDetail.returnQty))
             ? -Math.abs(parseInt(stockDetail.returnQty))
             : null,
-        returnType: returnType ? returnType : "",
+        // returnType: returnType ? returnType : "",
         invNo: invNo ? invNo : null,
         batchNo: stockDetail?.batchNo ? stockDetail?.batchNo : null,
       },
@@ -361,114 +365,231 @@ async function createReturnItems(
   return Promise.all(promises);
 }
 
-async function updatePoReturnItems(tx, poReturnItems, purchaseReturn) {
-  let removedItems = purchaseReturn.PoReturnItems.filter((oldItem) => {
-    let result = poReturnItems.find((newItem) => newItem.id === oldItem.id);
+function findRemovedItems(dataFound, purchaseReturnItems) {
+  let removedItems = dataFound.purchaseReturnItems.filter((oldItem) => {
+    let result = purchaseReturnItems.find(
+      (newItem) => parseInt(newItem.id) === parseInt(oldItem.id),
+    );
     if (result) return false;
     return true;
   });
-
-  let removedItemsId = removedItems.map((item) => parseInt(item.id));
-
-  await tx.PoReturnItems.deleteMany({
-    where: {
-      id: {
-        in: removedItemsId,
-      },
-    },
-  });
-
-  const promises = poReturnItems.map(async (item) => {
-    if (item?.id) {
-      return await tx.poReturnItems.update({
-        where: {
-          id: parseInt(item.id),
-        },
-        data: {
-          qty: item?.qty ? parseFloat(item.qty) : 0.0,
-          stockQty: item?.stockQty ? parseFloat(item.stockQty) : 0.0,
-          uomId: item?.uomId ? parseInt(item.uomId) : undefined,
-
-          Stock: {
-            update: {
-              inOrOut: "Out",
-              productId: item?.productId ? parseInt(item.productId) : undefined,
-              qty: 0 - parseFloat(item.qty),
-              branchId: parseInt(purchaseReturn.branchId),
-              stockQty: parseFloat(item.stockQty),
-              uomId: item?.uomId ? parseInt(item.uomId) : undefined,
-            },
-          },
-        },
-      });
-    } else {
-      return await tx.poReturnItems.create({
-        data: {
-          purchaseReturnId: parseInt(purchaseReturn.id),
-          productId: item?.productId ? parseInt(item.productId) : undefined,
-          qty: item?.qty ? parseFloat(item.qty) : 0.0,
-          poQty: item?.poQty ? parseFloat(item.poQty) : 0.0,
-          purchaseBillItemsId: parseInt(item.purchaseBillItemsId),
-          uomId: item?.uomId ? parseInt(item.uomId) : undefined,
-          stockQty: item?.stockQty ? parseFloat(item.stockQty) : undefined,
-
-          Stock: {
-            create: {
-              inOrOut: "Out",
-              productId: item?.productId ? parseInt(item.productId) : undefined,
-              qty: 0 - parseFloat(item.qty),
-              branchId: parseInt(purchaseReturn.branchId),
-              uomId: item?.uomId ? parseInt(item.uomId) : undefined,
-            },
-          },
-        },
-      });
-    }
-  });
-  return Promise.all(promises);
+  return removedItems;
 }
 
 async function update(id, body) {
-  let data;
   const {
-    supplierId,
-    dueDate,
-    address,
-    place,
-    poReturnItems,
-    companyId,
+    userId,
     branchId,
-    purchaseBillId,
-    active,
+    storeId,
+    locationId,
+    docDate,
+    supplierId,
+    returnType,
+    invNo,
+    dcNo,
+    dcDate,
+    remarks,
+    termsAndCondition,
+    returnItems,
   } = await body;
-  const dataFound = await prisma.purchaseReturn.findUnique({
+  let data;
+  const dataFound = await prisma.purchaseInwardReturn.findUnique({
     where: {
       id: parseInt(id),
     },
+    include: {
+      purchaseReturnItems: {
+        select: {
+          id: true,
+        },
+      },
+    },
   });
-  if (!dataFound) return NoRecordFound("purchaseReturn");
+  if (!dataFound) return NoRecordFound("Purchase Return");
+
+  let removedItems = findRemovedItems(dataFound, returnItems);
+  let removeItemsIds = removedItems.map((item) => parseInt(item.id));
   await prisma.$transaction(async (tx) => {
-    data = await tx.purchaseReturn.update({
+    // await deleteItemsFromStock(tx, removeItemsIds);
+    if (removeItemsIds.length > 0) {
+      await tx.purchaseReturnItems.deleteMany({
+        where: { id: { in: removeItemsIds } },
+      });
+    }
+    data = await tx.purchaseInwardReturn.update({
       where: {
         id: parseInt(id),
       },
       data: {
-        address,
-        place,
-        supplierId: parseInt(supplierId),
-        companyId: parseInt(companyId),
-        active,
-        // dueDate: dueDate ? new Date(dueDate) : undefined,
+        docDate: docDate ? new Date(docDate) : null,
+        updatedById: parseInt(userId),
+        storeId: parseInt(storeId),
         branchId: parseInt(branchId),
-        purchaseBillId: parseInt(purchaseBillId),
-      },
-      include: {
-        PoReturnItems: true,
+        locationId: parseInt(locationId),
+        supplierId: parseInt(supplierId),
+        returnType,
+        invNo,
+        dcNo,
+        dcDate: dcDate ? new Date(dcDate) : null,
+        remarks,
+        termsAndCondition,
       },
     });
-    await updatePoReturnItems(tx, poReturnItems, data);
+
+    await updateReturnGoods(
+      tx,
+      returnItems,
+      data,
+      userId,
+      locationId,
+      storeId,
+      returnType,
+      invNo,
+    );
   });
   return { statusCode: 0, data };
+}
+
+async function updateReturnGoods(
+  tx,
+  returnItems,
+  purchaseReturn,
+  userId,
+  locationId,
+  storeId,
+  returnType,
+  invNo,
+) {
+  const promises = returnItems.map(async (stockDetail) => {
+    if (stockDetail.id) {
+      // Update existing purchaseReturnItem
+      const updatedItem = await tx.purchaseReturnItems.update({
+        where: { id: parseInt(stockDetail.id) },
+
+        data: {
+          purchaseInwardReturnId: parseInt(purchaseReturn.id),
+          styleItemId: stockDetail?.styleItemId
+            ? parseInt(stockDetail.styleItemId)
+            : null,
+          uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+          hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+          returnQty: stockDetail?.returnQty
+            ? parseInt(stockDetail.returnQty)
+            : null,
+          returnType: returnType ? returnType : "",
+          purchaseInwardId: stockDetail?.purchaseInwardId
+            ? parseInt(stockDetail.purchaseInwardId)
+            : null,
+          invNo: invNo ? invNo : null,
+          batchNo: stockDetail?.batchNo ? stockDetail?.batchNo : null,
+        },
+      });
+
+      // Update or create Stock row
+      const existingStock = await tx.stock.findFirst({
+        where: { purchaseReturnItemsId: updatedItem.id },
+      });
+
+      if (existingStock) {
+        await tx.stock.update({
+          where: { id: existingStock.id },
+          data: {
+            updatedById: parseInt(userId),
+            branchId: parseInt(locationId),
+            storeId: parseInt(storeId),
+            styleItemId: stockDetail?.styleItemId
+              ? parseInt(stockDetail.styleItemId)
+              : null,
+            uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+            hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+            qty:
+              stockDetail?.returnQty &&
+              !isNaN(parseFloat(stockDetail.returnQty))
+                ? -Math.abs(parseInt(stockDetail.returnQty))
+                : null,
+            // returnType: returnType ? returnType : "",
+            invNo: invNo ? invNo : null,
+            batchNo: stockDetail?.batchNo ? stockDetail?.batchNo : null,
+          },
+        });
+      } else {
+        await tx.stock.create({
+          data: {
+            inOrOut: "Out",
+            processName: "Purchase Return",
+            createdById: parseInt(userId),
+            branchId: parseInt(locationId),
+            storeId: parseInt(storeId),
+            purchaseReturnItemsId: createdItem.id,
+            styleItemId: stockDetail?.styleItemId
+              ? parseInt(stockDetail.styleItemId)
+              : null,
+            uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+            hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+            qty:
+              stockDetail?.returnQty &&
+              !isNaN(parseFloat(stockDetail.returnQty))
+                ? -Math.abs(parseInt(stockDetail.returnQty))
+                : null,
+            // returnType: returnType ? returnType : "",
+            invNo: invNo ? invNo : null,
+            batchNo: stockDetail?.batchNo ? stockDetail?.batchNo : null,
+          },
+        });
+      }
+
+      return updatedItem;
+    } else {
+      // Create new purchaseReturnItem
+      const createdItem = await tx.purchaseReturnItems.create({
+        data: {
+          purchaseInwardReturnId: parseInt(purchaseReturn.id),
+          styleItemId: stockDetail?.styleItemId
+            ? parseInt(stockDetail.styleItemId)
+            : null,
+          uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+          hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+          returnQty: stockDetail?.returnQty
+            ? parseInt(stockDetail.returnQty)
+            : null,
+          returnType: returnType ? returnType : "",
+          purchaseInwardId: stockDetail?.purchaseInwardId
+            ? parseInt(stockDetail.purchaseInwardId)
+            : null,
+          invNo: invNo ? invNo : null,
+          batchNo: stockDetail?.batchNo ? stockDetail?.batchNo : null,
+        },
+      });
+
+      // Create Stock row
+      await tx.stock.create({
+        data: {
+          inOrOut: "Out",
+          processName: "Purchase Return",
+          createdById: parseInt(userId),
+          branchId: parseInt(locationId),
+          storeId: parseInt(storeId),
+          purchaseReturnItemsId: createdItem.id,
+          styleItemId: stockDetail?.styleItemId
+            ? parseInt(stockDetail.styleItemId)
+            : null,
+          uomId: stockDetail?.uomId ? parseInt(stockDetail.uomId) : null,
+          hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
+          qty:
+            stockDetail?.returnQty && !isNaN(parseFloat(stockDetail.returnQty))
+              ? -Math.abs(parseInt(stockDetail.returnQty))
+              : null,
+          // returnType: returnType ? returnType : "",
+          invNo: invNo ? invNo : null,
+          batchNo: stockDetail?.batchNo ? stockDetail?.batchNo : null,
+        },
+      });
+
+      return createdItem;
+    }
+  });
+
+  return Promise.all(promises);
 }
 
 async function remove(id) {
@@ -480,6 +601,4 @@ async function remove(id) {
   return { statusCode: 0, data };
 }
 
-
-
-export { get, getOne, getSearch, create, update, remove  };
+export { get, getOne, getSearch, create, update, remove };

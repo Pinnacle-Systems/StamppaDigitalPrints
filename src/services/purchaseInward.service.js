@@ -450,6 +450,7 @@ async function create(req) {
     finYearId,
     draftSave,
     locationId,
+    invNo,
   } = await req.body;
   let finYearDate = await getFinYearStartTimeEndTime(finYearId);
   const shortCode = finYearDate
@@ -481,6 +482,7 @@ async function create(req) {
         remarks,
         vehicleNo,
         locationId: parseInt(locationId),
+        invNo,
       },
     });
     await createInwardItems(
@@ -491,6 +493,7 @@ async function create(req) {
       locationId,
       storeId,
       inwardType,
+      invNo,
     );
   });
   return { statusCode: 0, data };
@@ -504,6 +507,7 @@ async function createInwardItems(
   locationId,
   storeId,
   inwardType,
+  invNo,
 ) {
   const promises = inwardItems?.map(async (stockDetail, index) => {
     const createdItem = await tx.inwardItems.create({
@@ -520,6 +524,7 @@ async function createInwardItems(
           : null,
         inwardType: inwardType ? inwardType : "",
         poId: stockDetail?.poId ? parseInt(stockDetail.poId) : null,
+        invNo: invNo ? invNo : null,
       },
     });
     await tx.stock.create({
@@ -537,6 +542,7 @@ async function createInwardItems(
         hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
         qty: stockDetail?.inwardQty ? parseInt(stockDetail.inwardQty) : null,
         inwardType: inwardType ? inwardType : "",
+        invNo: invNo ? invNo : null,
       },
     });
     return createdItem;
@@ -582,6 +588,7 @@ async function update(id, body) {
     vehicleNo,
     inwardItems,
     finYearId,
+    invNo,
   } = await body;
   let data;
   const dataFound = await prisma.purchaseInward.findUnique({
@@ -622,6 +629,7 @@ async function update(id, body) {
         remarks,
         vehicleNo,
         locationId: parseInt(locationId),
+        invNo,
       },
     });
     await updateinwardItems(
@@ -632,6 +640,7 @@ async function update(id, body) {
       locationId,
       storeId,
       inwardType,
+      invNo,
     );
   });
   return { statusCode: 0, data };
@@ -645,6 +654,7 @@ async function updateinwardItems(
   locationId,
   storeId,
   inwardType,
+  invNo,
 ) {
   const promises = inwardItems?.map(async (stockDetail) => {
     if (stockDetail.id) {
@@ -664,6 +674,7 @@ async function updateinwardItems(
             : null,
           inwardType: inwardType ? inwardType : "",
           poId: stockDetail?.poId ? parseInt(stockDetail.poId) : null,
+          invNo: invNo ? invNo : null,
         },
       });
 
@@ -688,6 +699,7 @@ async function updateinwardItems(
               ? parseInt(stockDetail.inwardQty)
               : null,
             inwardType: inwardType ? inwardType : "",
+            invNo: invNo ? invNo : null,
           },
         });
       } else {
@@ -708,6 +720,7 @@ async function updateinwardItems(
               ? parseInt(stockDetail.inwardQty)
               : null,
             inwardType: inwardType ? inwardType : "",
+            invNo: invNo ? invNo : null,
           },
         });
       }
@@ -729,6 +742,7 @@ async function updateinwardItems(
             : null,
           inwardType: inwardType ? inwardType : "",
           poId: stockDetail?.poId ? parseInt(stockDetail.poId) : null,
+          invNo: invNo ? invNo : null,
         },
       });
 
@@ -748,6 +762,7 @@ async function updateinwardItems(
           hsnId: stockDetail?.hsnId ? parseInt(stockDetail.hsnId) : null,
           qty: stockDetail?.inwardQty ? parseInt(stockDetail.inwardQty) : null,
           inwardType: inwardType ? inwardType : "",
+          invNo: invNo ? invNo : null,
         },
       });
 
@@ -998,25 +1013,22 @@ async function getPurInwardItemById(id) {
       hsnId: data.hsnId,
     },
   });
-  //  const totalStkQty = await prisma.stock.aggregate({
-  //       where: {
-  //         styleId: item.styleId,
-  //         sizeId: item.sizeId,
-  //         colorId: item.colorId,
-  //         storeId: data.storeId,
-  //         styleItemId: item.styleItemId,
-  //         fabricId: item.fabricId,
-  //       },
-  //       _sum: {
-  //         qty: true,
-  //       },
-  //     });
-
+  const totalStkQty = await prisma.stock.aggregate({
+    where: {
+      styleItemId: data.styleItemId,
+      uomId: data.uomId,
+      hsnId: data.hsnId,
+    },
+    _sum: {
+      qty: true,
+    },
+  });
   return {
     statusCode: 0,
     data: {
       ...data,
       poQty: itemWithPoQty.qty,
+      balQty: totalStkQty._sum.qty,
     },
   };
 }

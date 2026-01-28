@@ -103,7 +103,7 @@ const PurchaseReturnForm = ({
       setReturnType(data?.returnType || "General Purchase Inward");
       setLocationId(data?.Store ? data.Store.locationId : branchId);
       setStoreId(data?.storeId ? data.storeId : "");
-      setReturnItems(data?.returnItems ? data?.returnItems : []);
+      setReturnItems(data?.purchaseReturnItems ? data?.purchaseReturnItems : []);
       setSupplierId(data?.supplierId || "");
       setDcDate(
         data?.dcDate ? moment.utc(data.dcDate).format("YYYY-MM-DD") : "",
@@ -221,7 +221,7 @@ const PurchaseReturnForm = ({
       });
       return false;
     }
-    let mandatoryFields = ["styleItemId", "hsnId", "uomId", "inwardQty"];
+    let mandatoryFields = ["styleItemId", "hsnId", "uomId", "returnQty"];
     if (
       !(
         data.returnType &&
@@ -258,7 +258,7 @@ const PurchaseReturnForm = ({
     if (nextProcess == "draft" && !id) {
       handleSubmitCustom(
         addData,
-        (data = { ...data, draftSave: true }),
+         { ...data, draftSave: true },
         "Added",
         nextProcess,
       );
@@ -382,7 +382,7 @@ const PurchaseReturnForm = ({
                 name={"Inv No"}
                 value={invNo}
                 setValue={setInvNo}
-                readOnly={readOnly}
+                readOnly={id}
                 required
               />
 

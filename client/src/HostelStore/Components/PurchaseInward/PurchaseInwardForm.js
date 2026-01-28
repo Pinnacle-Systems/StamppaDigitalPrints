@@ -72,6 +72,7 @@ const PurchaseInwardForm = ({
   const [dcNo, setDcNo] = useState("");
   const [dcDate, setDcDate] = useState("");
   const [vehicleNo, setVehicleNo] = useState("");
+  const [invNo, setInvNo] = useState("");
 
   const { userId, finYearId, branchId } = getCommonParams();
   const { data: supplierDetails } = useGetPartyByIdQuery(supplierId, {
@@ -119,6 +120,7 @@ const PurchaseInwardForm = ({
       setRemarks(data?.remarks || "");
       setDcNo(data?.dcNo ? data.dcNo : "");
       setVehicleNo(data?.vehicleNo ? data.vehicleNo : "");
+      setInvNo(data?.invNo ? data?.invNo : "");
     },
     [id],
   );
@@ -146,6 +148,7 @@ const PurchaseInwardForm = ({
     vehicleNo,
     inwardItems: inwardItems?.filter((po) => po.styleItemId),
     finYearId,
+    invNo,
   };
 
   const handleSubmitCustom = async (callback, data, text, nextProcess) => {
@@ -237,7 +240,8 @@ const PurchaseInwardForm = ({
         data.dcNo &&
         data.supplierId &&
         isGridDatasValid(data?.inwardItems, false, mandatoryFields) &&
-        data?.inwardItems?.length !== 0
+        data?.inwardItems?.length !== 0 &&
+        data.invNo
       )
     ) {
       Swal.fire({
@@ -382,6 +386,13 @@ const PurchaseInwardForm = ({
                 beforeChange={() => {
                   setInwardItems([]);
                 }}
+              />
+              <TextInput
+                name={"Inv No"}
+                value={invNo}
+                setValue={setInvNo}
+                readOnly={id}
+                required
               />
 
               <div></div>

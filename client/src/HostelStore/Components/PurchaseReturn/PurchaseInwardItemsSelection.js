@@ -6,13 +6,13 @@ import {
 import { useGetPurInwardItemsQuery } from "../../../redux/uniformService/PurchaseInwardEntry";
 
 const PurchaseInwardItemsSelection = ({
-  inwardItems,
-  setInwardItems,
+  returnItems,
+  setReturnItems,
   setFillGrid,
   branchId,
   supplierId,
 }) => {
-  const [localinwardItems, setLocalinwardItems] = useState([]);
+  const [localReturnItems, setLocalReturnItems] = useState([]);
   const [searchDocId, setSearchDocId] = useState("");
   const [searchDocDate, setSearchDocDate] = useState("");
   const [searchDcDate, setSearchDcDate] = useState("");
@@ -59,7 +59,7 @@ const PurchaseInwardItemsSelection = ({
   const purInwardItems = purInwardItemsData?.data || [];
 
   function handleDone() {
-    setInwardItems((prev) => {
+    setReturnItems((prev) => {
       let updated = [...prev];
 
       // 1️⃣ Find ALL empty rows first
@@ -71,14 +71,15 @@ const PurchaseInwardItemsSelection = ({
       }, []);
 
       // 2️⃣ Fill empty rows with our items
-      localinwardItems.forEach((item, i) => {
+      localReturnItems.forEach((item, i) => {
         const newRow = {
           ...item,
           styleItemId: item.styleItemId ?? "",
           uomId: item.uomId ?? "",
           hsnId: item.hsnId ?? "",
-          poQty: item.qty ?? "",
+          poQty: item.poQty ?? "",
           balQty: item.balQty ?? "",
+          purchaseInwardId: item.purchaseInwardId ?? ""
         };
 
         // If we have an empty row at this position, use it
@@ -98,15 +99,15 @@ const PurchaseInwardItemsSelection = ({
   }
 
   function handleCancel() {
-    setLocalinwardItems([]);
+    setLocalReturnItems([]);
     setFillGrid(false);
   }
 
   // if (!data?.data || isFetching || isLoading) return <Loader />
 
   function addItem(item) {
-    setLocalinwardItems((localInwardItems) => {
-      let newItems = structuredClone(localInwardItems);
+    setLocalReturnItems((localReturnItems) => {
+      let newItems = structuredClone(localReturnItems);
       newItems.push(item);
       // newItems = newItems?.map(j => { return { ...j, delQty: j.qty } })
       return newItems;
@@ -114,8 +115,8 @@ const PurchaseInwardItemsSelection = ({
   }
 
   function removeItem(removeItem) {
-    setLocalinwardItems((localInwardItems) => {
-      return localInwardItems.filter(
+    setLocalReturnItems((localReturnItems) => {
+      return localReturnItems.filter(
         (item) =>
           !(
             removeItem.styleItemId === item.styleItemId &&
@@ -129,7 +130,7 @@ const PurchaseInwardItemsSelection = ({
   }
 
   function isItemChecked(checkItem) {
-    let item = localinwardItems.find(
+    let item = localReturnItems.find(
       (item) =>
         checkItem.styleItemId === item.styleItemId &&
         checkItem.hsnId === item.hsnId &&

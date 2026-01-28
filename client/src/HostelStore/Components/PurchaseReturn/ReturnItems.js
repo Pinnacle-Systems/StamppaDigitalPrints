@@ -30,7 +30,7 @@ const ReturnItems = ({
     uomId: "",
     returnQty: "",
     poQty: "",
-    balQty:"",
+    balQty: "",
     purchaseInwardId: "",
   };
   const [contextMenu, setContextMenu] = useState(null);
@@ -214,7 +214,7 @@ const ReturnItems = ({
                 <th
                   className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
                 >
-                  PO Qty
+                  Po Qty
                 </th>
                 <th
                   className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
@@ -451,10 +451,12 @@ const ReturnItems = ({
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
                   {returnItems
-                    ?.reduce(
-                      (sum, row) => sum + (Number(row.returnQty) || 0),
-                      0,
-                    )
+                    ?.reduce((sum, row) => sum + (Number(row.balQty) || 0), 0)
+                    .toFixed(2)}
+                </td>
+                <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
+                  {returnItems
+                    ?.reduce((sum, row) => sum + (Number(row.returnQty) || 0), 0)
                     .toFixed(2)}
                 </td>
                 <td className="border border-gray-300" colSpan={1}></td>

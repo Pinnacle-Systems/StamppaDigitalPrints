@@ -220,7 +220,7 @@ const PurchaseReturnFormReport = ({
                                         /> */}
                   </th>
                   <th className=" px-3  font-medium text-[13px]  text-gray-900  text-center w-40">
-                    <div>Inward Type</div>
+                    <div>Return Type</div>
                     {/* <input
                                             type="text"
                                             className="text-black h-5   w-full py-1.5  px-1 focus:outline-none border  border-gray-400 rounded-lg"
@@ -334,7 +334,7 @@ const PurchaseReturnFormReport = ({
                           {getDateFromDateTimeToDisplay(dataObj.docDate)}
                         </td>
                         <td className="py-1.5 text-left  ">
-                          {dataObj.inwardType}{" "}
+                          {dataObj.returnType}{" "}
                         </td>
 
                         <td className="py-1.5 text-left">
