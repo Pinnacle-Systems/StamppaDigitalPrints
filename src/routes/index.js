@@ -1,53 +1,49 @@
-export { default as employees } from "./employees.route.js"
-export { default as states } from "./states.route.js"
-export { default as countries } from "./countries.route.js"
-export { default as cities } from "./cities.route.js"
-export { default as departments } from "./departments.route.js"
-export { default as companies } from "./companies.route.js"
-export { default as branches } from "./branches.route.js"
-export { default as users } from "./users.route.js"
-export { default as pages } from "./pages.route.js"
-export { default as pageGroup } from "./pageGroup.route.js"
-export { default as subscriptions } from "./subscription.route.js"
-export { default as roles } from "./roles.route.js"
-export { default as finYear } from "./finYear.route.js"
+export { default as employees } from "./employees.route.js";
+export { default as states } from "./states.route.js";
+export { default as countries } from "./countries.route.js";
+export { default as cities } from "./cities.route.js";
+export { default as departments } from "./departments.route.js";
+export { default as companies } from "./companies.route.js";
+export { default as branches } from "./branches.route.js";
+export { default as users } from "./users.route.js";
+export { default as pages } from "./pages.route.js";
+export { default as pageGroup } from "./pageGroup.route.js";
+export { default as subscriptions } from "./subscription.route.js";
+export { default as roles } from "./roles.route.js";
+export { default as finYear } from "./finYear.route.js";
 
-export { default as OpeningStock } from "./OpeningStock.route.js"
+export { default as OpeningStock } from "./OpeningStock.route.js";
 export { default as employeeCategories } from "./employeeCategories.route.js";
 
-export { default as partyCategories } from "./partyCategory.route.js"
+export { default as partyCategories } from "./partyCategory.route.js";
 
-export { default as party } from "./partyMaster.route.js"
+export { default as party } from "./partyMaster.route.js";
 
+export { default as location } from "./location.route.js";
 
-
-export { default as location } from "./location.route.js"
-
-export { default as termsAndCondition } from "./termsAndConditionMaster.route.js"
-export { default as productBrand } from "./productBrand.route.js"
-export { default as productCategory } from "./productCategory.route.js"
-export { default as product } from "./product.route.js"
-export { default as purchaseBill } from "./purchaseBill.route.js"
-export { default as purchaseReturn } from "./purchaseReturn.route.js"
-export { default as stock } from "./stock.route.js"
-export { default as salesBill } from "./salesBill.route.js"
-export { default as salesReturn } from "./salesReturn.route.js"
-export { default as uom } from "./uom.route.js"
-export {default as payments} from "./payments.route.js"
+export { default as termsAndCondition } from "./termsAndConditionMaster.route.js";
+export { default as productBrand } from "./productBrand.route.js";
+export { default as productCategory } from "./productCategory.route.js";
+export { default as product } from "./product.route.js";
+export { default as purchaseBill } from "./purchaseBill.route.js";
+export { default as purchaseReturn } from "./purchaseReturn.route.js";
+export { default as purchaseCancel } from "./purchaseCancel.route.js";
+export { default as stock } from "./stock.route.js";
+export { default as salesBill } from "./salesBill.route.js";
+export { default as salesReturn } from "./salesReturn.route.js";
+export { default as uom } from "./uom.route.js";
+export { default as payments } from "./payments.route.js";
 export { default as style } from "./style.routes.js";
 export { default as styleItem } from "./styleItem.route.js";
 export { default as deliveryChallan } from "./deliveryChallan.route.js";
 export { default as deliveryInvoice } from "./deliveryInvoice.route.js";
 export { default as color } from "./color.route.js";
-export { default as taxTerm } from "./taxTerm.route.js"
-export { default as taxTemplate } from "./taxTemplate.route.js"
-export { default as hsn } from "./hsn.route.js"
-export { default as partyBranch } from "./partyBranch.route.js"
-export { default as branchType } from "./BranchType.route.js"
+export { default as taxTerm } from "./taxTerm.route.js";
+export { default as taxTemplate } from "./taxTemplate.route.js";
+export { default as hsn } from "./hsn.route.js";
+export { default as partyBranch } from "./partyBranch.route.js";
+export { default as branchType } from "./BranchType.route.js";
 export { default as purchaseInwardEntry } from "./purchaseInwardEntry.route.js";
-export {default as openingBalance} from './openingBalance.route.js'
-export { default as po } from "./po.route.js"
+export { default as openingBalance } from "./openingBalance.route.js";
+export { default as po } from "./po.route.js";
 export { default as payTerm } from "./payTerm.route.js";
-
-
-

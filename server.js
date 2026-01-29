@@ -37,7 +37,8 @@ import {
   termsAndCondition,
   payTerm,
   location,
-  purchaseInwardEntry
+  purchaseInwardEntry,
+  purchaseCancel
 } from './src/routes/index.js';
 
 import { socketMain } from './src/sockets/socket.js';
@@ -105,6 +106,7 @@ app.use("/purchaseInwardEntry", purchaseInwardEntry);
 app.use("/stock", stock);
 app.use("/salesBill", salesBill);
 app.use("/purchaseReturn", purchaseReturn)
+app.use("/purchaseCancel", purchaseCancel)
 app.use("/salesReturn", salesReturn)
 app.use('/uom', uom)
 app.use('/payments', payments)

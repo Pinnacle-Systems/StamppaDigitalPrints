@@ -29,7 +29,8 @@ import {
   BranchTypeMaster,
   OpeningBalance,
   PurchaseOrder,
-  PurchaseInward
+  PurchaseInward,
+  PurchaseCancel
 } from "../../../HostelStore/Components";
 
 
@@ -92,7 +93,8 @@ const ActiveTabList = () => {
     "TERMS & CONDTIONS MASTER": <TermsAndCondition />,
     "PAY TERM MASTER": <PayTermMaster />,
     "LOCATION MASTER": <LocationMaster />,
-    "PURCHASE INWARD": <PurchaseInward />
+    "PURCHASE INWARD": <PurchaseInward />,
+    "PURCHASE CANCEL": <PurchaseCancel/>
   };
   const innerWidth = window.innerWidth;
   const itemsToShow = innerWidth / 130;

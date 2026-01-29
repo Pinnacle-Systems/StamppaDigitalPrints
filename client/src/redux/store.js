@@ -47,6 +47,7 @@ import {
   UnitOfMeasurementApi,
   TermsAndConditionsMasterApi,
   purchaseInwardEntryApi,
+  purchaseCancelApi,
 } from "./uniformService";
 
 const commonReducers = {
@@ -86,6 +87,7 @@ const commonReducers = {
   stock: stockApi.reducer,
   salesBill: salesBillApi.reducer,
   purchaseReturn: purchaseReturnApi.reducer,
+  purchaseCancel: purchaseCancelApi.reducer,
   salesReturn: salesReturnApi.reducer,
   uomMaster: uomMasterApi.reducer,
   hsnMaster: HsnMasterApi.reducer,
@@ -123,6 +125,7 @@ const commonMiddleware = [
   stockApi.middleware,
   salesBillApi.middleware,
   purchaseReturnApi.middleware,
+  purchaseCancelApi.middleware,
   salesReturnApi.middleware,
   uomMasterApi.middleware,
   StyleMasterApi.middleware,

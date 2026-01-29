@@ -6,54 +6,60 @@ import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import Modal from "../../../UiComponents/Modal";
 import { useMemo } from "react";
-import PurchaseInwardItemsSelection from "./PurchaseInwardItemsSelection";
+import PurchaseItemsSelection from "./PurchaseItemsSelection";
 import { useLazyGetStyleItemMasterByIdQuery } from "../../../redux/services/StyleItemMasterService";
 
-const ReturnItems = ({
+const CancelItems = ({
   id,
-  returnItems,
-  setReturnItems,
+  cancelItems,
+  setCancelItems,
   readOnly,
   params,
   styleItemList,
   uomList,
   hsnList,
-  taxTemplateId,
-  returnType,
+  poType,
   supplierId,
   branchId,
 }) => {
   const EMPTY_ROW = {
+    poId: "",
+    poDocId: "",
     styleItemId: "",
     hsnId: "",
     uomId: "",
-    returnQty: "",
     poQty: "",
+    inwardQty: "",
+    returnQty: "",
     balQty: "",
-    purchaseInwardId: "",
+    cancelQty: "",
   };
   const [contextMenu, setContextMenu] = useState(null);
   const [fillGrid, setFillGrid] = useState(false);
   const addRow = () => {
     const newRow = {
+      poId: "",
+      poDocId: "",
       styleItemId: "",
       hsnId: "",
       uomId: "",
-      returnQty: "",
       poQty: "",
-      purchaseInwardId: "",
+      inwardQty: "",
+      returnQty: "",
+      balQty: "",
+      cancelQty: "",
     };
-    setReturnItems([...returnItems, newRow]);
+    setCancelItems([...cancelItems, newRow]);
   };
   const [triggerGetStyleItem, { data: styleData }] =
     useLazyGetStyleItemMasterByIdQuery();
   const handleInputChange = async (value, index, field) => {
     // clone first
-    const newRows = structuredClone(returnItems);
+    const newRows = structuredClone(cancelItems);
     if (field === "styleItemId") {
       // 1️⃣ update immediately
       newRows[index].styleItemId = value;
-      setReturnItems([...newRows]); // 🔥 maintain UI instantly
+      setCancelItems([...newRows]); // 🔥 maintain UI instantly
 
       try {
         // 2️⃣ fetch style data
@@ -62,7 +68,7 @@ const ReturnItems = ({
         // 3️⃣ update fabricId
         newRows[index].hsnId = response?.data?.hsnId;
         // 4️⃣ update again after API fetch
-        setReturnItems([...newRows]);
+        setCancelItems([...newRows]);
       } catch (e) {
         console.error("Style fetch failed", e);
       }
@@ -71,10 +77,10 @@ const ReturnItems = ({
     }
     // normal fields
     newRows[index][field] = value;
-    setReturnItems([...newRows]);
+    setCancelItems([...newRows]);
   };
   const deleteRow = (id) => {
-    setReturnItems((currentRows) => {
+    setCancelItems((currentRows) => {
       if (currentRows.length > 1) {
         return currentRows.filter((row, index) => index !== parseInt(id));
       }
@@ -83,7 +89,7 @@ const ReturnItems = ({
   };
 
   const handleDeleteAllRows = () => {
-    setReturnItems(Array.from({ length: 3 }, () => ({ ...EMPTY_ROW })));
+    setCancelItems(Array.from({ length: 3 }, () => ({ ...EMPTY_ROW })));
   };
 
   const handleRightClick = (event, rowIndex, type) => {
@@ -101,7 +107,7 @@ const ReturnItems = ({
   };
 
   const deleteSelectedRows = () => {
-    setReturnItems((rows) =>
+    setCancelItems((rows) =>
       rows.filter((r) => !(r.selected && (r.stockQty ?? 0) === 0)),
     );
     setContextMenu(null);
@@ -109,23 +115,23 @@ const ReturnItems = ({
 
   useEffect(() => {
     // If edit mode (id exists)
-    if (id && returnItems?.length > 0) {
+    if (id && cancelItems?.length > 0) {
       const requiredRows = 3;
-      const missingRows = requiredRows - returnItems.length;
+      const missingRows = requiredRows - cancelItems.length;
 
       if (missingRows > 0) {
-        setReturnItems([
-          ...returnItems,
+        setCancelItems([
+          ...cancelItems,
           ...Array.from({ length: missingRows }, () => ({ ...EMPTY_ROW })),
         ]);
       }
     }
 
     // If create mode (no id)
-    if (!id && (!returnItems || returnItems.length === 0)) {
-      setReturnItems(Array.from({ length: 3 }, () => ({ ...EMPTY_ROW })));
+    if (!id && (!cancelItems || cancelItems.length === 0)) {
+      setCancelItems(Array.from({ length: 3 }, () => ({ ...EMPTY_ROW })));
     }
-  }, [id, returnItems]);
+  }, [id, cancelItems]);
 
   return (
     <>
@@ -134,11 +140,11 @@ const ReturnItems = ({
         onClose={() => setFillGrid(false)}
         widthClass={"w-[95%]"}
       >
-        <PurchaseInwardItemsSelection
+        <PurchaseItemsSelection
           setFillGrid={setFillGrid}
           supplierId={supplierId}
-          returnItems={returnItems}
-          setReturnItems={setReturnItems}
+          cancelItems={cancelItems}
+          setCancelItems={setCancelItems}
           branchId={branchId}
         />
       </Modal>
@@ -182,6 +188,11 @@ const ReturnItems = ({
                   S.No
                 </th>
                 <th
+                  className={`w-28 px-4 py-2 text-center font-medium text-[13px]`}
+                >
+                  PO No
+                </th>
+                <th
                   className={`w-96 px-2 py-2 text-center font-medium text-[13px]`}
                 >
                   Description of Goods
@@ -199,7 +210,17 @@ const ReturnItems = ({
                 <th
                   className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
                 >
-                  Po Qty
+                  PO Qty
+                </th>
+                <th
+                  className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
+                >
+                  Inward Qty
+                </th>
+                <th
+                  className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
+                >
+                  Return Qty
                 </th>
                 <th
                   className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
@@ -209,7 +230,7 @@ const ReturnItems = ({
                 <th
                   className={`w-24 px-4 py-2 text-center font-medium text-[13px] `}
                 >
-                  Return Qty
+                  Cancel Qty
                 </th>
                 <th
                   className={`w-20 px-1 py-2 text-center font-medium text-[13px] `}
@@ -219,13 +240,22 @@ const ReturnItems = ({
               </tr>
             </thead>
             <tbody>
-              {(returnItems ? returnItems : [])?.map((row, index) => (
+              {(cancelItems ? cancelItems : [])?.map((row, index) => (
                 <tr
                   className="border border-blue-gray-200 cursor-pointer "
                   key={index}
                 >
                   <td className="w-12 border border-gray-300 text-[11px]  text-center p-0.5">
                     {index + 1}
+                  </td>
+                  <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-center">
+                    <input
+                      min={"0"}
+                      className="text-center rounded py-1 px-1 w-full table-data-input"
+                      onFocus={(e) => e.target.select()}
+                      value={row?.poDocId}
+                      disabled={true}
+                    />
                   </td>
                   <td className=" text-[11px] border border-gray-300 text-left">
                     <FxSelect
@@ -325,6 +355,52 @@ const ReturnItems = ({
                         if (e.code === "Minus" || e.code === "NumpadSubtract")
                           e.preventDefault();
                         if (e.key === "Delete") {
+                          handleInputChange("", index, "inwardQty");
+                        }
+                      }}
+                      min={"0"}
+                      type="number"
+                      className="text-right rounded py-1 px-1 w-full table-data-input"
+                      onFocus={(e) => e.target.select()}
+                      value={row?.inwardQty}
+                      onChange={(e) =>
+                        handleInputChange(e.target.value, index, "inwardQty")
+                      }
+                      onBlur={(e) => {
+                        handleInputChange(e.target.value, index, "inwardQty");
+                      }}
+                      disabled={true}
+                    />
+                  </td>
+                  <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
+                    <input
+                      onKeyDown={(e) => {
+                        if (e.code === "Minus" || e.code === "NumpadSubtract")
+                          e.preventDefault();
+                        if (e.key === "Delete") {
+                          handleInputChange("", index, "returnQty");
+                        }
+                      }}
+                      min={"0"}
+                      type="number"
+                      className="text-right rounded py-1 px-1 w-full table-data-input"
+                      onFocus={(e) => e.target.select()}
+                      value={row?.returnQty}
+                      onChange={(e) =>
+                        handleInputChange(e.target.value, index, "returnQty")
+                      }
+                      onBlur={(e) => {
+                        handleInputChange(e.target.value, index, "returnQty");
+                      }}
+                      disabled={true}
+                    />
+                  </td>
+                  <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
+                    <input
+                      onKeyDown={(e) => {
+                        if (e.code === "Minus" || e.code === "NumpadSubtract")
+                          e.preventDefault();
+                        if (e.key === "Delete") {
                           handleInputChange("", index, "balQty");
                         }
                       }}
@@ -344,19 +420,19 @@ const ReturnItems = ({
                   </td>
                   <td className="border-blue-gray-200 text-[11px] border border-gray-300 py-0.5 text-right">
                     <input
-                      id={`returnQty-input-${index}`}
+                      id={`cancelQty-input-${index}`}
                       onKeyDown={(e) => {
                         if (e.code === "Minus" || e.code === "NumpadSubtract")
                           e.preventDefault();
                         if (e.key === "Delete") {
-                          handleInputChange("", index, "returnQty");
+                          handleInputChange("", index, "cancelQty");
                         }
                         if (e.key === "Enter") {
                           e.preventDefault(); // prevent form submit or line break
                           e.stopPropagation();
 
                           const nextQtyInput = document.querySelector(
-                            `#returnQty-input-${index + 1}`,
+                            `#cancelQty-input-${index + 1}`,
                           );
                           if (nextQtyInput) {
                             nextQtyInput.focus();
@@ -367,9 +443,9 @@ const ReturnItems = ({
                       type="number"
                       className="text-right rounded py-1 px-1 w-full table-data-input"
                       onFocus={(e) => e.target.select()}
-                      value={row?.returnQty}
+                      value={row?.cancelQty}
                       onChange={(e) =>
-                        handleInputChange(e.target.value, index, "returnQty")
+                        handleInputChange(e.target.value, index, "cancelQty")
                       }
                       onBlur={(e) => {
                         const minQty = row.balQty;
@@ -379,7 +455,7 @@ const ReturnItems = ({
                           Swal.fire({
                             icon: "warning",
                             title: "Invalid Qty",
-                            text: `Return Qty cannot be More than Balance Qty! - ${minQty}`,
+                            text: `Cancel Qty cannot be More than Balance Qty! - ${minQty}`,
                             confirmButtonText: "OK",
                           });
                           return;
@@ -395,7 +471,7 @@ const ReturnItems = ({
                           });
                           return;
                         }
-                        handleInputChange(e.target.value, index, "returnQty");
+                        handleInputChange(e.target.value, index, "cancelQty");
                       }}
                       disabled={readOnly || (row.stockQty ?? 0) > 0}
                     />
@@ -425,23 +501,45 @@ const ReturnItems = ({
               <tr className="bg-gray-50 h-7 font-medium text-gray-800">
                 <td
                   className="text-right px-4 border border-gray-300 font-medium text-[13px] py-0.5"
-                  colSpan={returnType === "Direct Inward" ? 3 : 4}
+                  colSpan={5}
                 >
                   Total
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {returnItems
+                  {cancelItems
                     ?.reduce((sum, row) => sum + (Number(row.poQty) || 0), 0)
                     .toFixed(2)}
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {returnItems
-                    ?.reduce((sum, row) => sum + (Number(row.balQty) || 0), 0)
+                  {cancelItems
+                    ?.reduce(
+                      (sum, row) => sum + (Number(row.inwardQty) || 0),
+                      0,
+                    )
                     .toFixed(2)}
                 </td>
                 <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
-                  {returnItems
-                    ?.reduce((sum, row) => sum + (Number(row.returnQty) || 0), 0)
+                  {cancelItems
+                    ?.reduce(
+                      (sum, row) => sum + (Number(row.returnQty) || 0),
+                      0,
+                    )
+                    .toFixed(2)}
+                </td>
+                <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
+                  {cancelItems
+                    ?.reduce(
+                      (sum, row) => sum + (Number(row.balQty) || 0),
+                      0,
+                    )
+                    .toFixed(2)}
+                </td>
+                <td className="text-right border border-gray-300 px-1 font-medium text-[13px] py-0.5">
+                  {cancelItems
+                    ?.reduce(
+                      (sum, row) => sum + (Number(row.cancelQty) || 0),
+                      0,
+                    )
                     .toFixed(2)}
                 </td>
                 <td className="border border-gray-300" colSpan={1}></td>
@@ -491,4 +589,4 @@ const ReturnItems = ({
   );
 };
 
-export default ReturnItems;
+export default CancelItems;

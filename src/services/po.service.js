@@ -781,39 +781,75 @@ async function getAllDataPoItems(data) {
 }
 
 async function getPoItemById(id) {
-  let data = await prisma.poItems.findUnique({
-    where: {
-      id: parseInt(id),
-    },
+  const data = await prisma.poItems.findUnique({
+    where: { id: parseInt(id) },
     include: {
-      Po: {
-        select: {
-          docId: true,
-          dueDate: true,
-          docDate: true,
-        },
-      },
-      Uom: {
-        select: {
-          name: true,
-        },
-      },
-      StyleItem: {
-        select: {
-          name: true,
-        },
-      },
-      Hsn: {
-        select: {
-          name: true,
-        },
-      },
+      Po: { select: { docId: true, dueDate: true, docDate: true } },
+      Uom: { select: { name: true } },
+      StyleItem: { select: { name: true } },
+      Hsn: { select: { name: true } },
     },
+  });
+
+  if (!data) return NoRecordFound("Purchase Order");
+
+  // 1️⃣ All inward rows
+  const inwardItems = await prisma.inwardItems.findMany({
+    where: {
+      styleItemId: data.styleItemId,
+      poId: data.poId,
+      uomId: data.uomId,
+      hsnId: data.hsnId,
+    },
+    select: {
+      purchaseInwardId: true,
+      inwardQty: true,
+    },
+  });
+
+  const inwardQty = inwardItems.reduce(
+    (sum, item) => sum + (item.inwardQty ?? 0),
+    0,
+  );
+
+  // 2️⃣ Return qty using purchaseInwardId
+  const inwardIds = inwardItems.map((i) => i.purchaseInwardId).filter(Boolean);
+
+  let returnQty = 0;
+
+  if (inwardIds.length > 0) {
+    const returnAgg = await prisma.purchaseReturnItems.aggregate({
+      where: {
+        styleItemId: data.styleItemId,
+        uomId: data.uomId,
+        hsnId: data.hsnId,
+        purchaseInwardId: { in: inwardIds },
+      },
+      _sum: { returnQty: true },
+    });
+
+    returnQty = returnAgg._sum.returnQty ?? 0;
+  }
+
+  // 3️⃣ Stock balance
+  const totalStkQty = await prisma.stock.aggregate({
+    where: {
+      styleItemId: data.styleItemId,
+      uomId: data.uomId,
+      hsnId: data.hsnId,
+    },
+    _sum: { qty: true },
   });
 
   return {
     statusCode: 0,
-    data: data,
+    data: {
+      ...data,
+      poQty: data.qty,
+      inwardQty,
+      returnQty,
+      balQty: totalStkQty._sum.qty ?? 0,
+    },
   };
 }
 
