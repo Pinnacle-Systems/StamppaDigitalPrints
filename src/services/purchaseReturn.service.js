@@ -593,7 +593,7 @@ async function updateReturnGoods(
 }
 
 async function remove(id) {
-  const data = await prisma.purchaseReturn.delete({
+  const data = await prisma.purchaseInwardReturn.delete({
     where: {
       id: parseInt(id),
     },

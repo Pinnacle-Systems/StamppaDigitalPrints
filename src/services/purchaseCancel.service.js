@@ -196,6 +196,40 @@ async function getOne(id) {
           qty: true,
         },
       });
+      const inwardItems = await prisma.inwardItems.findMany({
+        where: {
+          styleItemId: item.styleItemId,
+          poId: item.poId,
+          uomId: item.uomId,
+          hsnId: item.hsnId,
+        },
+        select: {
+          inwardQty: true,
+          purchaseInwardId: true,
+        },
+      });
+      const inwardQty = inwardItems.reduce(
+        (sum, item) => sum + (item.inwardQty ?? 0),
+        0,
+      );
+      const inwardIds = inwardItems
+        .map((i) => i.purchaseInwardId)
+        .filter(Boolean);
+      let returnQty = 0;
+
+      if (inwardIds.length > 0) {
+        const returnAgg = await prisma.purchaseReturnItems.aggregate({
+          where: {
+            styleItemId: data.styleItemId,
+            uomId: data.uomId,
+            hsnId: data.hsnId,
+            purchaseInwardId: { in: inwardIds },
+          },
+          _sum: { returnQty: true },
+        });
+
+        returnQty = returnAgg._sum.returnQty ?? 0;
+      }
       const stkQty = await prisma.stock.aggregate({
         where: {
           styleItemId: item.styleItemId,
@@ -208,8 +242,10 @@ async function getOne(id) {
       });
       return {
         ...item,
-        balQty: stkQty._sum.qty + item.cancelQty,
         poQty: poQty.qty,
+        inwardQty,
+        returnQty,
+        balQty: stkQty._sum.qty + item.cancelQty,
       };
     }),
   );
@@ -474,7 +510,7 @@ async function updateCancelGoods(
 }
 
 async function remove(id) {
-  const data = await prisma.purchaseReturn.delete({
+  const data = await prisma.purchaseCancel.delete({
     where: {
       id: parseInt(id),
     },
